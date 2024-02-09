@@ -42,6 +42,22 @@ func TestCheckArgs(t *testing.T) {
 	assert.Equal(ok, 3)
 	assert.Error(err)
 
+	// Make sure we get an error when format is file but filepath is invalid
+	plugin.StatisticsFormat = "file"
+	plugin.StatisticsFilePath = "invalid.file.path"
+	ok, err = checkArgs(nil)
+	assert.Equal(ok, 3)
+	assert.Error(err)
+
+	// Make sure we get an error when file is not readable
+	os.Chmod("tests/unreadable.stats", 0100)
+	plugin.StatisticsFormat = "file"
+	plugin.StatisticsFilePath = "tests/unreadable.stats"
+	ok, err = checkArgs(nil)
+	assert.Equal(ok, 3)
+	assert.Error(err)
+	os.Chmod("tests/unreadable.stats", 0644)
+
 	// For both XML and JSON, we don't need to specify a file path
 	// But we need to specify the ip address and port
 	plugin.StatisticsFormat = "xml"
@@ -56,6 +72,15 @@ func TestCheckArgs(t *testing.T) {
 	plugin.StatisticsFormat = "xml"
 	plugin.StatisticsFilePath = ""
 	plugin.StatisticsIP = "bad.ip.address"
+	plugin.StatisticsPort = 8053
+	ok, err = checkArgs(nil)
+	assert.Equal(ok, 3)
+	assert.Error(err)
+
+	// Set missing ip address
+	plugin.StatisticsFormat = "xml"
+	plugin.StatisticsFilePath = ""
+	plugin.StatisticsIP = ""
 	plugin.StatisticsPort = 8053
 	ok, err = checkArgs(nil)
 	assert.Equal(ok, 3)

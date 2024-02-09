@@ -236,7 +236,7 @@ func readStatisticsChannel() error {
 func OutputMetricsGraphite() {
 	// Output metrics in Graphite format
 	for _, metric := range plugin.returnMetrics {
-		var outTags string
+		outTags := "bind.dns"
 		for i := len(metric.Tags) - 1; i >= 0; i-- {
 			if len(metric.Tags[i]) == 2 {
 				outTags = fmt.Sprintf("%s.%s_%s", outTags, metric.Tags[i][0], metric.Tags[i][1])

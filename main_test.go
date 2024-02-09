@@ -1,8 +1,14 @@
 package main
 
 import (
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -105,4 +111,137 @@ func TestCheckArgs(t *testing.T) {
 }
 
 func TestExecuteCheck(t *testing.T) {
+	assert := assert.New(t)
+
+	// Test the file format
+	plugin.StatisticsFormat = "file"
+	plugin.StatisticsFilePath = "tests/named.stats"
+	ok, err := executeCheck(nil)
+	assert.Equal(ok, 0)
+	assert.NoError(err)
+
+	// Test not able to read file
+	os.Chmod("tests/unreadable.stats", 0100)
+	plugin.StatisticsFormat = "file"
+	plugin.StatisticsFilePath = "tests/unreadable.stats"
+	ok, err = executeCheck(nil)
+	assert.Equal(ok, 2)
+	assert.Error(err)
+	os.Chmod("tests/unreadable.stats", 0644)
+
+	var bindXmlStats []byte
+	var bindJsonStats []byte
+
+	statsXmlFile, _ := os.Open("tests/named.xml")
+	statsXmlFile.Read(bindXmlStats)
+	statsXmlFile.Close()
+
+	statsJsonFile, _ := os.Open("tests/named.json")
+	statsJsonFile.Read(bindJsonStats)
+	statsJsonFile.Close()
+
+	// Setup server for testing
+	xmlServer := &testServer{
+		IP:          nil,
+		Port:        0,
+		StatsFormat: "xml",
+		Content:     bindXmlStats,
+	}
+
+	xmlServe := startTestServer(xmlServer)
+
+	defer xmlServe.Close()
+
+	// Wait for the server to start
+	for xmlServer.IP == nil {
+		time.Sleep(1 * time.Second)
+	}
+
+	// Test the xml format
+	plugin.StatisticsFormat = "xml"
+	plugin.StatisticsFilePath = ""
+	plugin.StatisticsIP = xmlServer.IP.String()
+	plugin.StatisticsPort = xmlServer.Port
+	ok, err = executeCheck(nil)
+	assert.Equal(ok, 0)
+	assert.NoError(err)
+
+	// Shut down the server
+	xmlServe.Close()
+
+	// Setup server for testing json
+	jsonServer := &testServer{
+		IP:          nil,
+		Port:        0,
+		StatsFormat: "json",
+		Content:     bindJsonStats,
+	}
+
+	jsonServe := startTestServer(jsonServer)
+
+	defer jsonServe.Close()
+
+	// Wait for the server to start
+	for jsonServer.IP == nil {
+		time.Sleep(1 * time.Second)
+	}
+
+	// Test the json format
+	plugin.StatisticsFormat = "json"
+	plugin.StatisticsFilePath = ""
+	plugin.StatisticsIP = jsonServer.IP.String()
+	plugin.StatisticsPort = jsonServer.Port
+	ok, err = executeCheck(nil)
+	assert.Equal(ok, 0)
+	assert.NoError(err)
+
+	// Shut down the server
+	jsonServe.Close()
+
+}
+
+type testServer struct {
+	IP          net.IP
+	Port        int
+	StatsFormat string
+	Content     []byte
+}
+
+func startTestServer(runningServer *testServer) *httptest.Server {
+	// Setup the test server
+	// Load the data to return
+	dns_stats := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Make sure we have a GET request
+		if r.Method != "GET" {
+			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Make sure we have the correct path
+		if runningServer.StatsFormat == "xml" {
+			if strings.HasPrefix(r.URL.Path, "/xml/v3") || r.URL.Path == "/" {
+				// Return the xml
+				w.Header().Set("Content-Type", "application/xml")
+				w.WriteHeader(http.StatusOK)
+				w.Write(runningServer.Content)
+				return
+			}
+		} else if runningServer.StatsFormat == "json" {
+			if strings.HasPrefix(r.URL.Path, "/json/v1") {
+				// Return the json
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write(runningServer.Content)
+				return
+			}
+		}
+	}))
+
+	// Get the ip and port of the server
+	var tempIP, tempPort string
+	tempIP, tempPort, _ = net.SplitHostPort(dns_stats.Listener.Addr().String())
+	runningServer.IP = net.ParseIP(tempIP)
+	runningServer.Port, _ = strconv.Atoi(tempPort)
+
+	return dns_stats
 }

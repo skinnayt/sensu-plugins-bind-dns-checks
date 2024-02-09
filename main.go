@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-plugin-sdk/sensu"
@@ -16,6 +20,8 @@ type Config struct {
 	StatisticsFilePath string
 	StatisticsIP       string
 	StatisticsPort     int
+	OutputFormat       string
+	returnMetrics      []*Metric
 }
 
 var (
@@ -64,8 +70,35 @@ var (
 			Usage:     "The port to listen on for the statistics channel",
 			Value:     &plugin.StatisticsPort,
 		},
+		&sensu.PluginConfigOption[string]{
+			Path:      "output-format",
+			Env:       "OUTPUT_FORMAT",
+			Argument:  "output-format",
+			Shorthand: "o",
+			Default:   "",
+			Usage:     "The format to output the metrics in (graphite)",
+			Value:     &plugin.OutputFormat,
+		},
 	}
 )
+
+type MetricTag [2]string
+
+type Metric struct {
+	Name      string
+	Value     int64
+	Timestamp time.Time
+	Tags      []*MetricTag
+}
+
+type namedStats struct {
+	statsTags []*MetricTag
+	curLevel  string
+}
+
+func (m *Metric) String() string {
+	return fmt.Sprintf("%s %s: %d", m.Timestamp, m.Name, m.Value)
+}
 
 func main() {
 	check := sensu.NewGoCheck(&plugin.PluginConfig, options, checkArgs, executeCheck, false)
@@ -108,5 +141,110 @@ func checkArgs(event *corev2.Event) (int, error) {
 }
 
 func executeCheck(event *corev2.Event) (int, error) {
+	if plugin.StatisticsFormat == "file" {
+		if err := readStatisticsFile(); err != nil {
+			return sensu.CheckStateCritical, fmt.Errorf("error reading statistics file: %s", err)
+		}
+	} else if plugin.StatisticsFormat == "xml" || plugin.StatisticsFormat == "json" {
+		if err := readStatisticsChannel(); err != nil {
+			return sensu.CheckStateCritical, fmt.Errorf("error reading statistics channel: %s", err)
+		}
+	}
+
+	// Dump out the metrics loaded from the statistics file or channel
+	if plugin.OutputFormat == "graphite" {
+		OutputMetricsGraphite()
+	}
+
 	return sensu.CheckStateOK, nil
+}
+
+// Read from statistics file
+func readStatisticsFile() error {
+	dnsStats, err := os.ReadFile(plugin.StatisticsFilePath)
+	if err != nil {
+		return err
+	}
+
+	// Parse the statistics file
+	var statsReadTime time.Time
+
+	namedStats := &namedStats{}
+	namedStats.statsTags = []*MetricTag{}
+
+	// Regular expressions for parsing the statistics file
+	var statsFile = make(map[string]*regexp.Regexp)
+	statsFile["start_end"], _ = regexp.Compile(`^(?:[-+]{3}) Statistics Dump (?:[-+]{3}) \((?P<unixtime>[0-9]*)\)$`)
+	statsFile["sections"], _ = regexp.Compile(`^(?:[+]{2}) (?P<section>[a-zA-Z0-9_/ ]+) (?:[+]{2})$`)
+	statsFile["metric"], _ = regexp.Compile(`^\s*(?P<value>[0-9]+) (?P<name>[-a-zA-Z0-9_/!#()<> ]+)\s*$`)
+	statsFile["view"], _ = regexp.Compile(`^\[View: (?P<view>[a-zA-Z0-9_/ ]+)\]$`)
+	statsFile["view_cache"], _ = regexp.Compile(`^\[View: (?P<view>[a-zA-Z0-9_/ ]+) \(Cache: (?P<cache>[a-zA-Z0-9_/ ]+)\)\]$`)
+	statsFile["subsection"], _ = regexp.Compile(`^\[(?P<subsection>[-a-zA-Z0-9_/!#()<>]+)\]$`)
+	statsFile["zone"], _ = regexp.Compile(`^\[(?P<zone>\.|(?:[a-z]+)(?:\.[a-z]+){1,}|(?:[0-9A-F]+\.)*(?:IN-ADDR|IP6|HOME|EMPTY\.AS112)\.ARPA)\]$`)
+	statsFile["bind_var"], _ = regexp.Compile(`^\[(?P<bind_var>[a-z.]+) \(view: _bind\)\]$`)
+	for _, line := range strings.Split(string(dnsStats), "\n") {
+		// Parse the line
+		if matched := statsFile["start_end"].FindStringSubmatch(line); matched != nil {
+			// Start of a new statistics file or end of the file
+			if statsReadTime.Equal(time.Time{}) {
+				unixTime, _ := strconv.ParseInt(matched[1], 10, 64)
+				statsReadTime = time.Unix(unixTime, 0)
+			}
+		} else if section := statsFile["sections"].FindStringSubmatch(line); section != nil {
+			// Start of a new section
+			namedStats.curLevel = section[1]
+			namedStats.statsTags = []*MetricTag{}
+		} else if metric := statsFile["metric"].FindStringSubmatch(line); metric != nil {
+			// Metric
+			value, _ := strconv.ParseInt(metric[1], 10, 64)
+			plugin.returnMetrics = append(plugin.returnMetrics, &Metric{
+				Name:      metric[2],
+				Value:     value,
+				Timestamp: statsReadTime,
+				Tags:      namedStats.statsTags,
+			})
+		} else if view := statsFile["view"].FindStringSubmatch(line); view != nil {
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"view", view[1]})
+		} else if viewCache := statsFile["view_cache"].FindStringSubmatch(line); viewCache != nil {
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"view", viewCache[1]})
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"cache", viewCache[2]})
+		} else if subsection := statsFile["subsection"].FindStringSubmatch(line); subsection != nil {
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"subsection", subsection[1]})
+		} else if zone := statsFile["zone"].FindStringSubmatch(line); zone != nil {
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"zone", zone[1]})
+		} else if bindVar := statsFile["bind_var"].FindStringSubmatch(line); bindVar != nil {
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"bind_var", bindVar[1]})
+			namedStats.statsTags = append(namedStats.statsTags, &MetricTag{"view", "_bind"})
+		} else if strings.Trim(line, " ") == "" {
+			// Skip blank lines
+			continue
+		} else {
+			// Unrecognized line
+			// XXX: Handle this later
+			continue
+		}
+	}
+
+	return nil
+}
+
+// Read from statistics channel
+func readStatisticsChannel() error {
+	return nil
+}
+
+func OutputMetricsGraphite() {
+	// Output metrics in Graphite format
+	for _, metric := range plugin.returnMetrics {
+		var outTags string
+		for i := len(metric.Tags) - 1; i >= 0; i-- {
+			if len(metric.Tags[i]) == 2 {
+				outTags = fmt.Sprintf("%s.%s_%s", outTags, metric.Tags[i][0], metric.Tags[i][1])
+			} else {
+				outTags = fmt.Sprintf("%s.%s", outTags, metric.Tags[i][0])
+			}
+		}
+
+		fmt.Printf("%s.%s %d %d\n", outTags, metric.Name, metric.Value, metric.Timestamp.Unix())
+	}
 }

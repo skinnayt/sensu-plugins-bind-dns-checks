@@ -1,6 +1,6 @@
 module github.com/skinnayt/sensu-plugins-bind-dns-checks
 
-go 1.18
+go 1.21.6
 
 require (
 	github.com/sensu/sensu-go/api/core/v2 v2.14.0

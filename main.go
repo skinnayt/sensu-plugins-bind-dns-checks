@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"net"
+	"os"
+
 	corev2 "github.com/sensu/sensu-go/api/core/v2"
 	"github.com/sensu/sensu-plugin-sdk/sensu"
 )
@@ -69,6 +73,37 @@ func main() {
 }
 
 func checkArgs(event *corev2.Event) (int, error) {
+	// Check that we got an appropriate statistics format
+	if plugin.StatisticsFormat == "file" {
+		if plugin.StatisticsFilePath == "" {
+			return sensu.CheckStateUnknown, fmt.Errorf("no statistics file path specified when using file format")
+		}
+		// Check that the file exists
+		if _, err := os.Stat(plugin.StatisticsFilePath); os.IsNotExist(err) {
+			return sensu.CheckStateUnknown, fmt.Errorf("statistics file does not exist: %s", plugin.StatisticsFilePath)
+		}
+		// Check that the file is readable
+		if _, err := os.Open(plugin.StatisticsFilePath); err != nil {
+			return sensu.CheckStateUnknown, fmt.Errorf("unable to read statistics file: %s", err)
+		}
+	} else if (plugin.StatisticsFormat == "xml") || (plugin.StatisticsFormat == "json") {
+		if plugin.StatisticsIP == "" {
+			return sensu.CheckStateUnknown, fmt.Errorf("no statistics IP specified when using %s format", plugin.StatisticsFormat)
+		}
+		// Check that the IP is valid
+		// TODO: Maybe allow a hostname here?
+		if net.ParseIP(plugin.StatisticsIP) == nil {
+			return sensu.CheckStateUnknown, fmt.Errorf("invalid statistics IP specified: %s", plugin.StatisticsIP)
+		}
+
+		// Check that the port is valid
+		if plugin.StatisticsPort < 1 || plugin.StatisticsPort > 65535 {
+			return sensu.CheckStateUnknown, fmt.Errorf("invalid statistics port specified: %d", plugin.StatisticsPort)
+		}
+	} else {
+		return sensu.CheckStateUnknown, fmt.Errorf("invalid statistics format: %s", plugin.StatisticsFormat)
+	}
+
 	return sensu.CheckStateOK, nil
 }
 

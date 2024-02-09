@@ -1,8 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -182,6 +187,7 @@ func readStatisticsFile() error {
 	statsFile["subsection"], _ = regexp.Compile(`^\[(?P<subsection>[-a-zA-Z0-9_/!#()<>]+)\]$`)
 	statsFile["zone"], _ = regexp.Compile(`^\[(?P<zone>\.|(?:[a-z]+)(?:\.[a-z]+){1,}|(?:[0-9A-F]+\.)*(?:IN-ADDR|IP6|HOME|EMPTY\.AS112)\.ARPA)\]$`)
 	statsFile["bind_var"], _ = regexp.Compile(`^\[(?P<bind_var>[a-z.]+) \(view: _bind\)\]$`)
+
 	for _, line := range strings.Split(string(dnsStats), "\n") {
 		// Parse the line
 		if matched := statsFile["start_end"].FindStringSubmatch(line); matched != nil {
@@ -230,6 +236,997 @@ func readStatisticsFile() error {
 
 // Read from statistics channel
 func readStatisticsChannel() error {
+	// Make the URL for connecting to the statistics channel
+	tcpAddr := net.TCPAddr{
+		IP:   net.ParseIP(plugin.StatisticsIP),
+		Port: plugin.StatisticsPort,
+	}
+
+	statsUrl := url.URL{
+		Scheme: "http",
+		Host:   tcpAddr.String(),
+		Path:   "/",
+	}
+	if plugin.StatisticsFormat == "xml" {
+		statsUrl.Path = "/xml/v3"
+	}
+	if plugin.StatisticsFormat == "json" {
+		statsUrl.Path = "/json/v1"
+	}
+
+	statsReq, _ := http.NewRequest("GET", statsUrl.String(), nil)
+	statsReq.Header.Add("Accept", "application/"+plugin.StatisticsFormat)
+
+	// Connect to the statistics channel
+	statsClient := &http.Client{}
+	statsResp, err := statsClient.Do(statsReq)
+	if err != nil {
+		return err
+	}
+
+	defer statsResp.Body.Close()
+
+	// Read the XML statistics
+	var statsData []byte
+	readData := make([]byte, 1024)
+	for {
+		n, err := statsResp.Body.Read(readData)
+
+		if err != nil {
+			if err == io.EOF {
+				if n > 0 {
+					statsData = append(statsData, readData[:n]...)
+				}
+				break
+			}
+			return err
+		}
+		if n > 0 {
+			statsData = append(statsData, readData[:n]...)
+		} else {
+			break
+		}
+	}
+
+	statsClient.CloseIdleConnections()
+
+	statsResp.Body.Close()
+
+	// Read the statistics from the channel
+	if plugin.StatisticsFormat == "xml" {
+		// Read the XML statistics
+		if err := readXmlStats(statsData); err != nil {
+			return err
+		}
+	} else if plugin.StatisticsFormat == "json" {
+		// Read the JSON statistics
+		if err := readJsonStats(statsData); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type bindXmlStats struct {
+	Stats []struct {
+		Name  string `xml:"name,attr"`
+		Value int    `xml:"value,attr"`
+	} `xml:"statistics"`
+}
+
+type bindJsonStats struct {
+	JsonStatsVersion string    `json:"json-stats-version"`
+	BootTime         time.Time `json:"boot-time"`
+	ConfigTime       time.Time `json:"config-time"`
+	CurrentTime      time.Time `json:"current-time"`
+	Version          string    `json:"version"`
+	OpCodes          struct {
+		Query      int `json:"QUERY"`
+		IQuery     int `json:"IQUERY"`
+		Status     int `json:"STATUS"`
+		Reserved3  int `json:"RESERVED3"`
+		Notify     int `json:"NOTIFY"`
+		Update     int `json:"UPDATE"`
+		Reserved6  int `json:"RESERVED6"`
+		Reserved7  int `json:"RESERVED7"`
+		Reserved8  int `json:"RESERVED8"`
+		Reserved9  int `json:"RESERVED9"`
+		Reserved10 int `json:"RESERVED10"`
+		Reserved11 int `json:"RESERVED11"`
+		Reserved12 int `json:"RESERVED12"`
+		Reserved13 int `json:"RESERVED13"`
+		Reserved14 int `json:"RESERVED14"`
+		Reserved15 int `json:"RESERVED15"`
+	} `json:"opcodes"`
+	RCodes struct {
+		Noerror    int `json:"NOERROR"`
+		Formerr    int `json:"FORMERR"`
+		Servfail   int `json:"SERVFAIL"`
+		Nxdomain   int `json:"NXDOMAIN"`
+		Notimp     int `json:"NOTIMP"`
+		Refused    int `json:"REFUSED"`
+		Yxdomain   int `json:"YXDOMAIN"`
+		Yxrrset    int `json:"YXRRSET"`
+		Nxrrset    int `json:"NXRRSET"`
+		Notauth    int `json:"NOTAUTH"`
+		Notzone    int `json:"NOTZONE"`
+		Reserved11 int `json:"RESERVED11"`
+		Reserved12 int `json:"RESERVED12"`
+		Reserved13 int `json:"RESERVED13"`
+		Reserved14 int `json:"RESERVED14"`
+		Reserved15 int `json:"RESERVED15"`
+		Badvers    int `json:"BADVERS"`
+		R17        int `json:"17"`
+		R18        int `json:"18"`
+		R19        int `json:"19"`
+		R20        int `json:"20"`
+		R21        int `json:"21"`
+		R22        int `json:"22"`
+		Badcookie  int `json:"BADCOOKIE"`
+	} `json:"rcodes"`
+	QTypes struct {
+		Others     int `json:"Others"`
+		A          int `json:"A"`
+		Ns         int `json:"NS"`
+		Cname      int `json:"CNAME"`
+		Soa        int `json:"SOA"`
+		Ptr        int `json:"PTR"`
+		Mx         int `json:"MX"`
+		Txt        int `json:"TXT"`
+		Afsdb      int `json:"AFSDB"`
+		Aaaa       int `json:"AAAA"`
+		Srv        int `json:"SRV"`
+		Naptr      int `json:"NAPTR"`
+		Dname      int `json:"DNAME"`
+		Ds         int `json:"DS"`
+		Rrsig      int `json:"RRSIG"`
+		Dnskey     int `json:"DNSKEY"`
+		Nsec3param int `json:"NSEC3PARAM"`
+		Tlsa       int `json:"TLSA"`
+		Cds        int `json:"CDS"`
+		Cdnskey    int `json:"CDNSKEY"`
+		Zonemd     int `json:"ZONEMD"`
+		Svcb       int `json:"SVCB"`
+		Https      int `json:"HTTPS"`
+		Spf        int `json:"SPF"`
+		Any        int `json:"ANY"`
+	} `json:"qtypes"`
+	NSStats struct {
+		Requestv4        int `json:"Requestv4"`
+		Requestv6        int `json:"Requestv6"`
+		ReqEdns0         int `json:"ReqEdns0"`
+		ReqTCP           int `json:"ReqTCP"`
+		TCPConnHighWater int `json:"TCPConnHighWater"`
+		AuthQryRej       int `json:"AuthQryRej"`
+		RecQryRej        int `json:"RecQryRej"`
+		Response         int `json:"Response"`
+		TruncatedResp    int `json:"TruncatedResp"`
+		RespEDNS0        int `json:"RespEDNS0"`
+		QrySuccess       int `json:"QrySuccess"`
+		QryAuthAns       int `json:"QryAuthAns"`
+		QryNoauthAns     int `json:"QryNoauthAns"`
+		QryReferral      int `json:"QryReferral"`
+		QryNxrrset       int `json:"QryNxrrset"`
+		QryNXDOMAIN      int `json:"QryNXDOMAIN"`
+		QryFailure       int `json:"QryFailure"`
+		QryUDP           int `json:"QryUDP"`
+		QryTCP           int `json:"QryTCP"`
+		CookieIn         int `json:"CookieIn"`
+		CookieNew        int `json:"CookieNew"`
+		CookieMatch      int `json:"CookieMatch"`
+		ECSOpt           int `json:"ECSOpt"`
+	} `json:"nsstats"`
+	ZoneStats struct {
+		NotifyInv4 int `json:"NotifyInv4"`
+		SOAOutv4   int `json:"SOAOutv4"`
+		AXFRReqv4  int `json:"AXFRReqv4"`
+		IXFRReqv4  int `json:"IXFRReqv4"`
+		XfrSuccess int `json:"XfrSuccess"`
+	} `json:"zonestats"`
+	Views struct {
+		Default struct {
+			Zones    []*ZoneView `json:"zones"`
+			Resolver struct {
+				Stats struct {
+					Queryv6         int `json:"Queryv6"`
+					Responsev6      int `json:"Responsev6"`
+					NXDOMAIN        int `json:"NXDOMAIN"`
+					Truncated       int `json:"Truncated"`
+					Retry           int `json:"Retry"`
+					ValAttempt      int `json:"ValAttempt"`
+					ValOk           int `json:"ValOk"`
+					ValNegOk        int `json:"ValNegOk"`
+					QryRTT100       int `json:"QryRTT100"`
+					QryRTT500       int `json:"QryRTT500"`
+					BucketSize      int `json:"BucketSize"`
+					ClientCookieOut int `json:"ClientCookieOut"`
+					ServerCookieOut int `json:"ServerCookieOut"`
+					CookieIn        int `json:"CookieIn"`
+					CookieClientOk  int `json:"CookieClientOk"`
+					Priming         int `json:"Priming"`
+				} `json:"stats"`
+				QTypes struct {
+					Others     int `json:"Others"`
+					A          int `json:"A"`
+					Ns         int `json:"NS"`
+					Cname      int `json:"CNAME"`
+					Soa        int `json:"SOA"`
+					Ptr        int `json:"PTR"`
+					Mx         int `json:"MX"`
+					Txt        int `json:"TXT"`
+					Afsdb      int `json:"AFSDB"`
+					Aaaa       int `json:"AAAA"`
+					Srv        int `json:"SRV"`
+					Naptr      int `json:"NAPTR"`
+					Dname      int `json:"DNAME"`
+					Ds         int `json:"DS"`
+					Rrsig      int `json:"RRSIG"`
+					Dnskey     int `json:"DNSKEY"`
+					Nsec3param int `json:"NSEC3PARAM"`
+					Tlsa       int `json:"TLSA"`
+					Cds        int `json:"CDS"`
+					Cdnskey    int `json:"CDNSKEY"`
+					Zonemd     int `json:"ZONEMD"`
+					Svcb       int `json:"SVCB"`
+					Https      int `json:"HTTPS"`
+					Spf        int `json:"SPF"`
+					Any        int `json:"ANY"`
+				} `json:"qtypes"`
+				Cache struct {
+					Others     int `json:"Others"`
+					A          int `json:"A"`
+					Ns         int `json:"NS"`
+					Cname      int `json:"CNAME"`
+					Soa        int `json:"SOA"`
+					Ptr        int `json:"PTR"`
+					Mx         int `json:"MX"`
+					Txt        int `json:"TXT"`
+					Afsdb      int `json:"AFSDB"`
+					Aaaa       int `json:"AAAA"`
+					Srv        int `json:"SRV"`
+					Naptr      int `json:"NAPTR"`
+					Dname      int `json:"DNAME"`
+					Ds         int `json:"DS"`
+					Rrsig      int `json:"RRSIG"`
+					Dnskey     int `json:"DNSKEY"`
+					Nsec3param int `json:"NSEC3PARAM"`
+					Tlsa       int `json:"TLSA"`
+					Cds        int `json:"CDS"`
+					Cdnskey    int `json:"CDNSKEY"`
+					Zonemd     int `json:"ZONEMD"`
+					Svcb       int `json:"SVCB"`
+					Https      int `json:"HTTPS"`
+					Spf        int `json:"SPF"`
+					Any        int `json:"ANY"`
+				} `json:"cache"`
+				CacheStats struct {
+					CacheHits    int `json:"CacheHits"`
+					CacheMisses  int `json:"CacheMisses"`
+					QueryHits    int `json:"QueryHits"`
+					QueryMisses  int `json:"QueryMisses"`
+					DeleteLRU    int `json:"DeleteLRU"`
+					DeleteTTL    int `json:"DeleteTTL"`
+					CacheNodes   int `json:"CacheNodes"`
+					CacheBuckets int `json:"CacheBuckets"`
+					TreeMemTotal int `json:"TreeMemTotal"`
+					TreeMemInUse int `json:"TreeMemInUse"`
+					TreeMemMax   int `json:"TreeMemMax"`
+					HeapMemTotal int `json:"HeapMemTotal"`
+					HeapMemInUse int `json:"HeapMemInUse"`
+					HeapMemMax   int `json:"HeapMemMax"`
+				} `json:"cache-stats"`
+				Adb struct {
+					Nentries   int `json:"nentries"`
+					Entriescnt int `json:"entriescnt"`
+					Nnames     int `json:"nnames"`
+					Namescnt   int `json:"namescnt"`
+				} `json:"adb"`
+			} `json:"resolver"`
+		} `json:"default"`
+		Bind struct {
+			Zones    []*ZoneView `json:"zones"`
+			Resolver struct {
+				Stats struct {
+					Queryv6         int `json:"Queryv6"`
+					Responsev6      int `json:"Responsev6"`
+					NXDOMAIN        int `json:"NXDOMAIN"`
+					Truncated       int `json:"Truncated"`
+					Retry           int `json:"Retry"`
+					ValAttempt      int `json:"ValAttempt"`
+					ValOk           int `json:"ValOk"`
+					ValNegOk        int `json:"ValNegOk"`
+					QryRTT100       int `json:"QryRTT100"`
+					QryRTT500       int `json:"QryRTT500"`
+					BucketSize      int `json:"BucketSize"`
+					ClientCookieOut int `json:"ClientCookieOut"`
+					ServerCookieOut int `json:"ServerCookieOut"`
+					CookieIn        int `json:"CookieIn"`
+					CookieClientOk  int `json:"CookieClientOk"`
+					Priming         int `json:"Priming"`
+				} `json:"stats"`
+				QTypes struct {
+					Others     int `json:"Others"`
+					A          int `json:"A"`
+					Ns         int `json:"NS"`
+					Cname      int `json:"CNAME"`
+					Soa        int `json:"SOA"`
+					Ptr        int `json:"PTR"`
+					Mx         int `json:"MX"`
+					Txt        int `json:"TXT"`
+					Afsdb      int `json:"AFSDB"`
+					Aaaa       int `json:"AAAA"`
+					Srv        int `json:"SRV"`
+					Naptr      int `json:"NAPTR"`
+					Dname      int `json:"DNAME"`
+					Ds         int `json:"DS"`
+					Rrsig      int `json:"RRSIG"`
+					Dnskey     int `json:"DNSKEY"`
+					Nsec3param int `json:"NSEC3PARAM"`
+					Tlsa       int `json:"TLSA"`
+					Cds        int `json:"CDS"`
+					Cdnskey    int `json:"CDNSKEY"`
+					Zonemd     int `json:"ZONEMD"`
+					Svcb       int `json:"SVCB"`
+					Https      int `json:"HTTPS"`
+					Spf        int `json:"SPF"`
+					Any        int `json:"ANY"`
+				} `json:"qtypes"`
+				Cache struct {
+					Others     int `json:"Others"`
+					A          int `json:"A"`
+					Ns         int `json:"NS"`
+					Cname      int `json:"CNAME"`
+					Soa        int `json:"SOA"`
+					Ptr        int `json:"PTR"`
+					Mx         int `json:"MX"`
+					Txt        int `json:"TXT"`
+					Afsdb      int `json:"AFSDB"`
+					Aaaa       int `json:"AAAA"`
+					Srv        int `json:"SRV"`
+					Naptr      int `json:"NAPTR"`
+					Dname      int `json:"DNAME"`
+					Ds         int `json:"DS"`
+					Rrsig      int `json:"RRSIG"`
+					Dnskey     int `json:"DNSKEY"`
+					Nsec3param int `json:"NSEC3PARAM"`
+					Tlsa       int `json:"TLSA"`
+					Cds        int `json:"CDS"`
+					Cdnskey    int `json:"CDNSKEY"`
+					Zonemd     int `json:"ZONEMD"`
+					Svcb       int `json:"SVCB"`
+					Https      int `json:"HTTPS"`
+					Spf        int `json:"SPF"`
+					Any        int `json:"ANY"`
+				} `json:"cache"`
+				CacheStats struct {
+					CacheHits    int `json:"CacheHits"`
+					CacheMisses  int `json:"CacheMisses"`
+					QueryHits    int `json:"QueryHits"`
+					QueryMisses  int `json:"QueryMisses"`
+					DeleteLRU    int `json:"DeleteLRU"`
+					DeleteTTL    int `json:"DeleteTTL"`
+					CacheNodes   int `json:"CacheNodes"`
+					CacheBuckets int `json:"CacheBuckets"`
+					TreeMemTotal int `json:"TreeMemTotal"`
+					TreeMemInUse int `json:"TreeMemInUse"`
+					TreeMemMax   int `json:"TreeMemMax"`
+					HeapMemTotal int `json:"HeapMemTotal"`
+					HeapMemInUse int `json:"HeapMemInUse"`
+					HeapMemMax   int `json:"HeapMemMax"`
+				} `json:"cache-stats"`
+				Adb struct {
+					Nentries   int `json:"nentries"`
+					Entriescnt int `json:"entriescnt"`
+					Nnames     int `json:"nnames"`
+					Namescnt   int `json:"namescnt"`
+				} `json:"adb"`
+			} `json:"resolver"`
+		} `json:"bind"`
+	} `json:"views"`
+	SocketStats struct {
+		UDP4Open    int `json:"UDP4Open"`
+		UDP6Open    int `json:"UDP6Open"`
+		TCP4Open    int `json:"TCP4Open"`
+		TCP6Open    int `json:"TCP6Open"`
+		RawOpen     int `json:"RawOpen"`
+		UDP4Close   int `json:"UDP4Close"`
+		UDP6Close   int `json:"UDP6Close"`
+		TCP4Close   int `json:"TCP4Close"`
+		TCP6Close   int `json:"TCP6Close"`
+		UDP6Conn    int `json:"UDP6Conn"`
+		TCP4Conn    int `json:"TCP4Conn"`
+		TCP6Conn    int `json:"TCP6Conn"`
+		TCP4Accept  int `json:"TCP4Accept"`
+		TCP6Accept  int `json:"TCP6Accept"`
+		TCP4RecvErr int `json:"TCP4RecvErr"`
+		UDP4Active  int `json:"UDP4Active"`
+		UDP6Active  int `json:"UDP6Active"`
+		TCP4Active  int `json:"TCP4Active"`
+		TCP6Active  int `json:"TCP6Active"`
+		RawActive   int `json:"RawActive"`
+	} `json:"socketstats"`
+	SocketMgr struct {
+		Sockets []SocketMgrSocket `json:"sockets"`
+	} `json:"socketmgr"`
+	TaskMgr struct {
+		ThreadModel    string         `json:"thread-model"`
+		DefaultQuantum int            `json:"default-quantum"`
+		Tasks          []*TaskMgrTask `json:"tasks"`
+	} `json:"taskmgr"`
+	Memory struct {
+		TotalUse    int        `json:"TotalUse"`
+		InUse       int        `json:"InUse"`
+		Malloced    int        `json:"Malloced"`
+		BlockSize   int        `json:"BlockSize"`
+		ContextSize int        `json:"ContextSize"`
+		Lost        int        `json:"Lost"`
+		Contexts    []*Context `json:"Contexts"`
+	} `json:"memory"`
+	Traffic struct {
+		DnsUDPRequestsSizesReceivedIPv4 struct {
+			U0_15    int `json:"0-15"`
+			U16_31   int `json:"16-31"`
+			U32_47   int `json:"32-47"`
+			U48_63   int `json:"48-63"`
+			U64_79   int `json:"64-79"`
+			U80_95   int `json:"80-95"`
+			U96_111  int `json:"96-111"`
+			U112_127 int `json:"112-127"`
+			U128_143 int `json:"128-143"`
+			U144_159 int `json:"144-159"`
+		} `json:"dns-udp-requests-sizes-received-ipv4"`
+		DnsUDPResponsesSizesSentIPv4 struct {
+			U0_15      int `json:"0-15"`
+			U16_31     int `json:"16-31"`
+			U32_47     int `json:"32-47"`
+			U48_63     int `json:"48-63"`
+			U64_79     int `json:"64-79"`
+			U80_95     int `json:"80-95"`
+			U96_111    int `json:"96-111"`
+			U112_127   int `json:"112-127"`
+			U128_143   int `json:"128-143"`
+			U144_159   int `json:"144-159"`
+			U160_175   int `json:"160-175"`
+			U176_191   int `json:"176-191"`
+			U192_207   int `json:"192-207"`
+			U208_223   int `json:"208-223"`
+			U224_239   int `json:"224-239"`
+			U240_255   int `json:"240-255"`
+			U256_271   int `json:"256-271"`
+			U272_287   int `json:"272-287"`
+			U288_303   int `json:"288-303"`
+			U304_319   int `json:"304-319"`
+			U320_335   int `json:"320-335"`
+			U336_351   int `json:"336-351"`
+			U352_367   int `json:"352-367"`
+			U368_383   int `json:"368-383"`
+			U384_399   int `json:"384-399"`
+			U400_415   int `json:"400-415"`
+			U416_431   int `json:"416-431"`
+			U432_447   int `json:"432-447"`
+			U448_463   int `json:"448-463"`
+			U464_479   int `json:"464-479"`
+			U480_495   int `json:"480-495"`
+			U496_511   int `json:"496-511"`
+			U512_527   int `json:"512-527"`
+			U528_543   int `json:"528-543"`
+			U544_559   int `json:"544-559"`
+			U560_575   int `json:"560-575"`
+			U576_591   int `json:"576-591"`
+			U592_607   int `json:"592-607"`
+			U608_623   int `json:"608-623"`
+			U624_639   int `json:"624-639"`
+			U640_655   int `json:"640-655"`
+			U656_671   int `json:"656-671"`
+			U672_687   int `json:"672-687"`
+			U688_703   int `json:"688-703"`
+			U704_719   int `json:"704-719"`
+			U720_735   int `json:"720-735"`
+			U736_751   int `json:"736-751"`
+			U752_767   int `json:"752-767"`
+			U768_783   int `json:"768-783"`
+			U784_799   int `json:"784-799"`
+			U800_815   int `json:"800-815"`
+			U816_831   int `json:"816-831"`
+			U832_847   int `json:"832-847"`
+			U848_863   int `json:"848-863"`
+			U864_879   int `json:"864-879"`
+			U880_895   int `json:"880-895"`
+			U896_911   int `json:"896-911"`
+			U912_927   int `json:"912-927"`
+			U928_943   int `json:"928-943"`
+			U944_959   int `json:"944-959"`
+			U960_975   int `json:"960-975"`
+			U976_991   int `json:"976-991"`
+			U992_1007  int `json:"992-1007"`
+			U1008_1023 int `json:"1008-1023"`
+			U1024_1039 int `json:"1024-1039"`
+			U1040_1055 int `json:"1040-1055"`
+			U1056_1071 int `json:"1056-1071"`
+			U1072_1087 int `json:"1072-1087"`
+			U1088_1103 int `json:"1088-1103"`
+			U1104_1119 int `json:"1104-1119"`
+			U1120_1135 int `json:"1120-1135"`
+			U1136_1151 int `json:"1136-1151"`
+			U1152_1167 int `json:"1152-1167"`
+			U1168_1183 int `json:"1168-1183"`
+			U1184_1199 int `json:"1184-1199"`
+			U1200_1215 int `json:"1200-1215"`
+			U1216_1231 int `json:"1216-1231"`
+		} `json:"dns-udp-responses-sizes-sent-ipv4"`
+		DnsTCPRequestsSizesReceivedIPv4 struct {
+			T0_15  int `json:"0-15"`
+			T16_31 int `json:"16-31"`
+			T32_47 int `json:"32-47"`
+			T48_63 int `json:"48-63"`
+			T64_79 int `json:"64-79"`
+			T80_95 int `json:"80-95"`
+		} `json:"dns-tcp-requests-sizes-received-ipv4"`
+		DnsTCPResponsesSizesSentIPv4 struct {
+			T0_15      int `json:"0-15"`
+			T16_31     int `json:"16-31"`
+			T32_47     int `json:"32-47"`
+			T48_63     int `json:"48-63"`
+			T64_79     int `json:"64-79"`
+			T80_95     int `json:"80-95"`
+			T96_111    int `json:"96-111"`
+			T112_127   int `json:"112-127"`
+			T128_143   int `json:"128-143"`
+			T144_159   int `json:"144-159"`
+			T160_175   int `json:"160-175"`
+			T176_191   int `json:"176-191"`
+			T192_207   int `json:"192-207"`
+			T208_223   int `json:"208-223"`
+			T224_239   int `json:"224-239"`
+			T240_255   int `json:"240-255"`
+			T256_271   int `json:"256-271"`
+			T272_287   int `json:"272-287"`
+			T288_303   int `json:"288-303"`
+			T304_319   int `json:"304-319"`
+			T320_335   int `json:"320-335"`
+			T336_351   int `json:"336-351"`
+			T352_367   int `json:"352-367"`
+			T368_383   int `json:"368-383"`
+			T384_399   int `json:"384-399"`
+			T400_415   int `json:"400-415"`
+			T416_431   int `json:"416-431"`
+			T432_447   int `json:"432-447"`
+			T448_463   int `json:"448-463"`
+			T464_479   int `json:"464-479"`
+			T480_495   int `json:"480-495"`
+			T496_511   int `json:"496-511"`
+			T512_527   int `json:"512-527"`
+			T528_543   int `json:"528-543"`
+			T544_559   int `json:"544-559"`
+			T560_575   int `json:"560-575"`
+			T576_591   int `json:"576-591"`
+			T592_607   int `json:"592-607"`
+			T608_623   int `json:"608-623"`
+			T624_639   int `json:"624-639"`
+			T640_655   int `json:"640-655"`
+			T656_671   int `json:"656-671"`
+			T672_687   int `json:"672-687"`
+			T688_703   int `json:"688-703"`
+			T704_719   int `json:"704-719"`
+			T720_735   int `json:"720-735"`
+			T736_751   int `json:"736-751"`
+			T752_767   int `json:"752-767"`
+			T768_783   int `json:"768-783"`
+			T784_799   int `json:"784-799"`
+			T800_815   int `json:"800-815"`
+			T816_831   int `json:"816-831"`
+			T832_847   int `json:"832-847"`
+			T848_863   int `json:"848-863"`
+			T864_879   int `json:"864-879"`
+			T880_895   int `json:"880-895"`
+			T896_911   int `json:"896-911"`
+			T912_927   int `json:"912-927"`
+			T928_943   int `json:"928-943"`
+			T944_959   int `json:"944-959"`
+			T960_975   int `json:"960-975"`
+			T976_991   int `json:"976-991"`
+			T992_1007  int `json:"992-1007"`
+			T1008_1023 int `json:"1008-1023"`
+			T1024_1039 int `json:"1024-1039"`
+			T1040_1055 int `json:"1040-1055"`
+			T1056_1071 int `json:"1056-1071"`
+			T1072_1087 int `json:"1072-1087"`
+			T1088_1103 int `json:"1088-1103"`
+			T1104_1119 int `json:"1104-1119"`
+			T1120_1135 int `json:"1120-1135"`
+			T1136_1151 int `json:"1136-1151"`
+			T1152_1167 int `json:"1152-1167"`
+			T1168_1183 int `json:"1168-1183"`
+			T1184_1199 int `json:"1184-1199"`
+			T1200_1215 int `json:"1200-1215"`
+			T1216_1231 int `json:"1216-1231"`
+			T1232_1247 int `json:"1232-1247"`
+			T1248_1263 int `json:"1248-1263"`
+			T1264_1279 int `json:"1264-1279"`
+			T1280_1295 int `json:"1280-1295"`
+			T1296_1311 int `json:"1296-1311"`
+			T1312_1327 int `json:"1312-1327"`
+			T1328_1343 int `json:"1328-1343"`
+			T1344_1359 int `json:"1344-1359"`
+			T1360_1375 int `json:"1360-1375"`
+			T1376_1391 int `json:"1376-1391"`
+			T1392_1407 int `json:"1392-1407"`
+			T1408_1423 int `json:"1408-1423"`
+			T1424_1439 int `json:"1424-1439"`
+			T1440_1455 int `json:"1440-1455"`
+			T1456_1471 int `json:"1456-1471"`
+			T1472_1487 int `json:"1472-1487"`
+			T1488_1503 int `json:"1488-1503"`
+			T1504_1519 int `json:"1504-1519"`
+			T1520_1535 int `json:"1520-1535"`
+			T1536_1551 int `json:"1536-1551"`
+			T1552_1567 int `json:"1552-1567"`
+			T1568_1583 int `json:"1568-1583"`
+			T1584_1599 int `json:"1584-1599"`
+			T1600_1615 int `json:"1600-1615"`
+			T1616_1631 int `json:"1616-1631"`
+			T1632_1647 int `json:"1632-1647"`
+			T1648_1663 int `json:"1648-1663"`
+			T1664_1679 int `json:"1664-1679"`
+			T1680_1695 int `json:"1680-1695"`
+			T1696_1711 int `json:"1696-1711"`
+			T1712_1727 int `json:"1712-1727"`
+			T1728_1743 int `json:"1728-1743"`
+			T1744_1759 int `json:"1744-1759"`
+			T1760_1775 int `json:"1760-1775"`
+			T1776_1791 int `json:"1776-1791"`
+			T1792_1807 int `json:"1792-1807"`
+			T1808_1823 int `json:"1808-1823"`
+			T1824_1839 int `json:"1824-1839"`
+			T1840_1855 int `json:"1840-1855"`
+			T1856_1871 int `json:"1856-1871"`
+			T1872_1887 int `json:"1872-1887"`
+			T1888_1903 int `json:"1888-1903"`
+			T1904_1919 int `json:"1904-1919"`
+			T1920_1935 int `json:"1920-1935"`
+			T1936_1951 int `json:"1936-1951"`
+			T1952_1967 int `json:"1952-1967"`
+			T1968_1983 int `json:"1968-1983"`
+			T1984_1999 int `json:"1984-1999"`
+			T2000_2015 int `json:"2000-2015"`
+			T2016_2031 int `json:"2016-2031"`
+			T2032_2047 int `json:"2032-2047"`
+			T2048_2063 int `json:"2048-2063"`
+			T2064_2079 int `json:"2064-2079"`
+			T2080_2095 int `json:"2080-2095"`
+			T2096_2111 int `json:"2096-2111"`
+			T2112_2127 int `json:"2112-2127"`
+			T2128_2143 int `json:"2128-2143"`
+			T2144_2159 int `json:"2144-2159"`
+			T2160_2175 int `json:"2160-2175"`
+			T2176_2191 int `json:"2176-2191"`
+			T2192_2207 int `json:"2192-2207"`
+			T2208_2223 int `json:"2208-2223"`
+			T2224_2239 int `json:"2224-2239"`
+			T2240_2255 int `json:"2240-2255"`
+			T2256_2271 int `json:"2256-2271"`
+			T2272_2287 int `json:"2272-2287"`
+			T2288_2303 int `json:"2288-2303"`
+			T2304_2319 int `json:"2304-2319"`
+			T2320_2335 int `json:"2320-2335"`
+		} `json:"dns-tcp-responses-sizes-sent-ipv4"`
+		DnsUDPRequestsSizesReceivedIPv6 struct {
+			U0_15    int `json:"0-15"`
+			U16_31   int `json:"16-31"`
+			U32_47   int `json:"32-47"`
+			U48_63   int `json:"48-63"`
+			U64_79   int `json:"64-79"`
+			U80_95   int `json:"80-95"`
+			U96_111  int `json:"96-111"`
+			U112_127 int `json:"112-127"`
+			U128_143 int `json:"128-143"`
+			U144_159 int `json:"144-159"`
+		} `json:"dns-udp-requests-sizes-received-ipv6"`
+		DnsUDPResponsesSizesSentIPv6 struct {
+			U0_15      int `json:"0-15"`
+			U16_31     int `json:"16-31"`
+			U32_47     int `json:"32-47"`
+			U48_63     int `json:"48-63"`
+			U64_79     int `json:"64-79"`
+			U80_95     int `json:"80-95"`
+			U96_111    int `json:"96-111"`
+			U112_127   int `json:"112-127"`
+			U128_143   int `json:"128-143"`
+			U144_159   int `json:"144-159"`
+			U160_175   int `json:"160-175"`
+			U176_191   int `json:"176-191"`
+			U192_207   int `json:"192-207"`
+			U208_223   int `json:"208-223"`
+			U224_239   int `json:"224-239"`
+			U240_255   int `json:"240-255"`
+			U256_271   int `json:"256-271"`
+			U272_287   int `json:"272-287"`
+			U288_303   int `json:"288-303"`
+			U304_319   int `json:"304-319"`
+			U320_335   int `json:"320-335"`
+			U336_351   int `json:"336-351"`
+			U352_367   int `json:"352-367"`
+			U368_383   int `json:"368-383"`
+			U384_399   int `json:"384-399"`
+			U400_415   int `json:"400-415"`
+			U416_431   int `json:"416-431"`
+			U432_447   int `json:"432-447"`
+			U448_463   int `json:"448-463"`
+			U464_479   int `json:"464-479"`
+			U480_495   int `json:"480-495"`
+			U496_511   int `json:"496-511"`
+			U512_527   int `json:"512-527"`
+			U528_543   int `json:"528-543"`
+			U544_559   int `json:"544-559"`
+			U560_575   int `json:"560-575"`
+			U576_591   int `json:"576-591"`
+			U592_607   int `json:"592-607"`
+			U608_623   int `json:"608-623"`
+			U624_639   int `json:"624-639"`
+			U640_655   int `json:"640-655"`
+			U656_671   int `json:"656-671"`
+			U672_687   int `json:"672-687"`
+			U688_703   int `json:"688-703"`
+			U704_719   int `json:"704-719"`
+			U720_735   int `json:"720-735"`
+			U736_751   int `json:"736-751"`
+			U752_767   int `json:"752-767"`
+			U768_783   int `json:"768-783"`
+			U784_799   int `json:"784-799"`
+			U800_815   int `json:"800-815"`
+			U816_831   int `json:"816-831"`
+			U832_847   int `json:"832-847"`
+			U848_863   int `json:"848-863"`
+			U864_879   int `json:"864-879"`
+			U880_895   int `json:"880-895"`
+			U896_911   int `json:"896-911"`
+			U912_927   int `json:"912-927"`
+			U928_943   int `json:"928-943"`
+			U944_959   int `json:"944-959"`
+			U960_975   int `json:"960-975"`
+			U976_991   int `json:"976-991"`
+			U992_1007  int `json:"992-1007"`
+			U1008_1023 int `json:"1008-1023"`
+			U1024_1039 int `json:"1024-1039"`
+			U1040_1055 int `json:"1040-1055"`
+			U1056_1071 int `json:"1056-1071"`
+			U1072_1087 int `json:"1072-1087"`
+			U1088_1103 int `json:"1088-1103"`
+			U1104_1119 int `json:"1104-1119"`
+			U1120_1135 int `json:"1120-1135"`
+			U1136_1151 int `json:"1136-1151"`
+			U1152_1167 int `json:"1152-1167"`
+			U1168_1183 int `json:"1168-1183"`
+			U1184_1199 int `json:"1184-1199"`
+			U1200_1215 int `json:"1200-1215"`
+			U1216_1231 int `json:"1216-1231"`
+		} `json:"dns-udp-responses-sizes-sent-ipv6"`
+		DnsTCPRequestsSizesReceivedIPv6 struct {
+			T0_15  int `json:"0-15"`
+			T16_31 int `json:"16-31"`
+			T32_47 int `json:"32-47"`
+			T48_63 int `json:"48-63"`
+			T64_79 int `json:"64-79"`
+			T80_95 int `json:"80-95"`
+		} `json:"dns-tcp-requests-sizes-received-ipv6"`
+		DnsTCPResponsesSizesSentIPv6 struct {
+			T0_15      int `json:"0-15"`
+			T16_31     int `json:"16-31"`
+			T32_47     int `json:"32-47"`
+			T48_63     int `json:"48-63"`
+			T64_79     int `json:"64-79"`
+			T80_95     int `json:"80-95"`
+			T96_111    int `json:"96-111"`
+			T112_127   int `json:"112-127"`
+			T128_143   int `json:"128-143"`
+			T144_159   int `json:"144-159"`
+			T160_175   int `json:"160-175"`
+			T176_191   int `json:"176-191"`
+			T192_207   int `json:"192-207"`
+			T208_223   int `json:"208-223"`
+			T224_239   int `json:"224-239"`
+			T240_255   int `json:"240-255"`
+			T256_271   int `json:"256-271"`
+			T272_287   int `json:"272-287"`
+			T288_303   int `json:"288-303"`
+			T304_319   int `json:"304-319"`
+			T320_335   int `json:"320-335"`
+			T336_351   int `json:"336-351"`
+			T352_367   int `json:"352-367"`
+			T368_383   int `json:"368-383"`
+			T384_399   int `json:"384-399"`
+			T400_415   int `json:"400-415"`
+			T416_431   int `json:"416-431"`
+			T432_447   int `json:"432-447"`
+			T448_463   int `json:"448-463"`
+			T464_479   int `json:"464-479"`
+			T480_495   int `json:"480-495"`
+			T496_511   int `json:"496-511"`
+			T512_527   int `json:"512-527"`
+			T528_543   int `json:"528-543"`
+			T544_559   int `json:"544-559"`
+			T560_575   int `json:"560-575"`
+			T576_591   int `json:"576-591"`
+			T592_607   int `json:"592-607"`
+			T608_623   int `json:"608-623"`
+			T624_639   int `json:"624-639"`
+			T640_655   int `json:"640-655"`
+			T656_671   int `json:"656-671"`
+			T672_687   int `json:"672-687"`
+			T688_703   int `json:"688-703"`
+			T704_719   int `json:"704-719"`
+			T720_735   int `json:"720-735"`
+			T736_751   int `json:"736-751"`
+			T752_767   int `json:"752-767"`
+			T768_783   int `json:"768-783"`
+			T784_799   int `json:"784-799"`
+			T800_815   int `json:"800-815"`
+			T816_831   int `json:"816-831"`
+			T832_847   int `json:"832-847"`
+			T848_863   int `json:"848-863"`
+			T864_879   int `json:"864-879"`
+			T880_895   int `json:"880-895"`
+			T896_911   int `json:"896-911"`
+			T912_927   int `json:"912-927"`
+			T928_943   int `json:"928-943"`
+			T944_959   int `json:"944-959"`
+			T960_975   int `json:"960-975"`
+			T976_991   int `json:"976-991"`
+			T992_1007  int `json:"992-1007"`
+			T1008_1023 int `json:"1008-1023"`
+			T1024_1039 int `json:"1024-1039"`
+			T1040_1055 int `json:"1040-1055"`
+			T1056_1071 int `json:"1056-1071"`
+			T1072_1087 int `json:"1072-1087"`
+			T1088_1103 int `json:"1088-1103"`
+			T1104_1119 int `json:"1104-1119"`
+			T1120_1135 int `json:"1120-1135"`
+			T1136_1151 int `json:"1136-1151"`
+			T1152_1167 int `json:"1152-1167"`
+			T1168_1183 int `json:"1168-1183"`
+			T1184_1199 int `json:"1184-1199"`
+			T1200_1215 int `json:"1200-1215"`
+			T1216_1231 int `json:"1216-1231"`
+			T1232_1247 int `json:"1232-1247"`
+			T1248_1263 int `json:"1248-1263"`
+			T1264_1279 int `json:"1264-1279"`
+			T1280_1295 int `json:"1280-1295"`
+			T1296_1311 int `json:"1296-1311"`
+			T1312_1327 int `json:"1312-1327"`
+			T1328_1343 int `json:"1328-1343"`
+			T1344_1359 int `json:"1344-1359"`
+			T1360_1375 int `json:"1360-1375"`
+			T1376_1391 int `json:"1376-1391"`
+			T1392_1407 int `json:"1392-1407"`
+			T1408_1423 int `json:"1408-1423"`
+			T1424_1439 int `json:"1424-1439"`
+			T1440_1455 int `json:"1440-1455"`
+			T1456_1471 int `json:"1456-1471"`
+			T1472_1487 int `json:"1472-1487"`
+			T1488_1503 int `json:"1488-1503"`
+			T1504_1519 int `json:"1504-1519"`
+			T1520_1535 int `json:"1520-1535"`
+			T1536_1551 int `json:"1536-1551"`
+			T1552_1567 int `json:"1552-1567"`
+			T1568_1583 int `json:"1568-1583"`
+			T1584_1599 int `json:"1584-1599"`
+			T1600_1615 int `json:"1600-1615"`
+			T1616_1631 int `json:"1616-1631"`
+			T1632_1647 int `json:"1632-1647"`
+			T1648_1663 int `json:"1648-1663"`
+			T1664_1679 int `json:"1664-1679"`
+			T1680_1695 int `json:"1680-1695"`
+			T1696_1711 int `json:"1696-1711"`
+			T1712_1727 int `json:"1712-1727"`
+			T1728_1743 int `json:"1728-1743"`
+			T1744_1759 int `json:"1744-1759"`
+			T1760_1775 int `json:"1760-1775"`
+			T1776_1791 int `json:"1776-1791"`
+			T1792_1807 int `json:"1792-1807"`
+			T1808_1823 int `json:"1808-1823"`
+			T1824_1839 int `json:"1824-1839"`
+			T1840_1855 int `json:"1840-1855"`
+			T1856_1871 int `json:"1856-1871"`
+			T1872_1887 int `json:"1872-1887"`
+			T1888_1903 int `json:"1888-1903"`
+			T1904_1919 int `json:"1904-1919"`
+			T1920_1935 int `json:"1920-1935"`
+			T1936_1951 int `json:"1936-1951"`
+			T1952_1967 int `json:"1952-1967"`
+			T1968_1983 int `json:"1968-1983"`
+			T1984_1999 int `json:"1984-1999"`
+			T2000_2015 int `json:"2000-2015"`
+			T2016_2031 int `json:"2016-2031"`
+			T2032_2047 int `json:"2032-2047"`
+			T2048_2063 int `json:"2048-2063"`
+			T2064_2079 int `json:"2064-2079"`
+			T2080_2095 int `json:"2080-2095"`
+			T2096_2111 int `json:"2096-2111"`
+			T2112_2127 int `json:"2112-2127"`
+			T2128_2143 int `json:"2128-2143"`
+			T2144_2159 int `json:"2144-2159"`
+			T2160_2175 int `json:"2160-2175"`
+			T2176_2191 int `json:"2176-2191"`
+			T2192_2207 int `json:"2192-2207"`
+			T2208_2223 int `json:"2208-2223"`
+			T2224_2239 int `json:"2224-2239"`
+			T2240_2255 int `json:"2240-2255"`
+			T2256_2271 int `json:"2256-2271"`
+			T2272_2287 int `json:"2272-2287"`
+			T2288_2303 int `json:"2288-2303"`
+			T2304_2319 int `json:"2304-2319"`
+			T2320_2335 int `json:"2320-2335"`
+		} `json:"dns-tcp-responses-sizes-sent-ipv6"`
+	} `json:"traffic"`
+}
+
+type SocketMgrSocket struct {
+	Id           string   `json:"id"`
+	References   int      `json:"references"`
+	Type         string   `json:"type"`
+	LocalAddress string   `json:"local_address"`
+	States       []string `json:"states"`
+}
+
+type TaskMgrTask struct {
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	References int    `json:"references"`
+	State      string `json:"state"`
+	Quantun    int    `json:"quantum"`
+	Events     int    `json:"events"`
+}
+
+type Context struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	References  int    `json:"references"`
+	Total       int    `json:"total"`
+	Inuse       int    `json:"inuse"`
+	Maxinuse    int    `json:"maxinuse"`
+	Malloced    int    `json:"malloced"`
+	Maxmalloced int    `json:"maxmalloced"`
+	Blocksize   int    `json:"blocksize"`
+	Pools       int    `json:"pools"`
+	Hiwater     int    `json:"hiwater"`
+	Lowater     int    `json:"lowater"`
+}
+
+type ZoneView struct {
+	Name   string    `json:"name"`
+	Class  string    `json:"class"`
+	Serial int       `json:"serial"`
+	Type   string    `json:"type"`
+	Loaded time.Time `json:"loaded"`
+	RCodes struct{}  `json:"rcodes"`
+	QTypes struct{}  `json:"qtypes"`
+}
+
+func readXmlStats(statsData []byte) error {
+	fmt.Printf("Read %d bytes of XML\n", len(statsData))
+
+	var xmlStats bindXmlStats
+
+	// Parse the XML statistics
+	err := xml.Unmarshal(statsData, &xmlStats)
+	if err != nil {
+		fmt.Printf("Error parsing XML: %s\n", err)
+		return err
+	}
+
+	return nil
+}
+
+func readJsonStats(statsData []byte) error {
+	// Read the JSON statistics
+	var jsonStats bindJsonStats
+
+	err := json.Unmarshal(statsData, &jsonStats)
+	if err != nil {
+		fmt.Printf("Error parsing JSON: %s\n", err)
+		return err
+	}
 	return nil
 }
 

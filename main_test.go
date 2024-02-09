@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -129,75 +130,62 @@ func TestExecuteCheck(t *testing.T) {
 	assert.Error(err)
 	os.Chmod("tests/unreadable.stats", 0644)
 
-	var bindXmlStats []byte
-	var bindJsonStats []byte
+	var namedXmlStats []byte
+	var namedJsonStats []byte
 
-	statsXmlFile, _ := os.Open("tests/named.xml")
-	statsXmlFile.Read(bindXmlStats)
-	statsXmlFile.Close()
+	namedXmlStats, _ = os.ReadFile("tests/named.xml")
+	namedJsonStats, _ = os.ReadFile("tests/named.json")
 
-	statsJsonFile, _ := os.Open("tests/named.json")
-	statsJsonFile.Read(bindJsonStats)
-	statsJsonFile.Close()
-
-	// Setup server for testing
-	xmlServer := &testServer{
-		IP:          nil,
-		Port:        0,
-		StatsFormat: "xml",
-		Content:     bindXmlStats,
+	tt := []struct {
+		StatsFormat  string
+		OutputFormat string
+		Content      []byte
+	}{
+		{"xml", "", namedXmlStats},
+		{"xml", "graphite", namedXmlStats},
+		{"json", "", namedJsonStats},
+		{"json", "graphite", namedJsonStats},
 	}
 
-	xmlServe := startTestServer(xmlServer)
+	for _, tc := range tt {
+		// Setup server for testing
+		testConfig := &testServer{
+			IP:          nil,
+			Port:        0,
+			StatsFormat: tc.StatsFormat,
+			Content:     tc.Content,
+			WaitChan:    make(chan bool),
+		}
 
-	defer xmlServe.Close()
+		testServe := startTestServer(testConfig)
+		defer testServe.Close()
 
-	// Wait for the server to start
-	for xmlServer.IP == nil {
-		time.Sleep(1 * time.Second)
+		go func() {
+			testServe.Start()
+			<-testConfig.WaitChan
+			testServe.Close()
+		}()
+
+		// Wait for the server to start
+		for testConfig.IP == nil {
+			time.Sleep(1 * time.Second)
+		}
+
+		// Test the xml format
+		plugin.StatisticsFormat = tc.StatsFormat
+		plugin.StatisticsFilePath = ""
+		plugin.OutputFormat = tc.OutputFormat
+		plugin.StatisticsIP = testConfig.IP.String()
+		plugin.StatisticsPort = testConfig.Port
+		ok, err = executeCheck(nil)
+		assert.Equal(ok, 0)
+		assert.NoError(err)
+
+		testConfig.WaitChan <- true
+
+		// Shut down the server
+		testServe.Close()
 	}
-
-	// Test the xml format
-	plugin.StatisticsFormat = "xml"
-	plugin.StatisticsFilePath = ""
-	plugin.StatisticsIP = xmlServer.IP.String()
-	plugin.StatisticsPort = xmlServer.Port
-	ok, err = executeCheck(nil)
-	assert.Equal(ok, 0)
-	assert.NoError(err)
-
-	// Shut down the server
-	xmlServe.Close()
-
-	// Setup server for testing json
-	jsonServer := &testServer{
-		IP:          nil,
-		Port:        0,
-		StatsFormat: "json",
-		Content:     bindJsonStats,
-	}
-
-	jsonServe := startTestServer(jsonServer)
-
-	defer jsonServe.Close()
-
-	// Wait for the server to start
-	for jsonServer.IP == nil {
-		time.Sleep(1 * time.Second)
-	}
-
-	// Test the json format
-	plugin.StatisticsFormat = "json"
-	plugin.StatisticsFilePath = ""
-	plugin.StatisticsIP = jsonServer.IP.String()
-	plugin.StatisticsPort = jsonServer.Port
-	ok, err = executeCheck(nil)
-	assert.Equal(ok, 0)
-	assert.NoError(err)
-
-	// Shut down the server
-	jsonServe.Close()
-
 }
 
 type testServer struct {
@@ -205,37 +193,52 @@ type testServer struct {
 	Port        int
 	StatsFormat string
 	Content     []byte
+	IsActive    bool
+	WaitChan    chan bool
 }
 
 func startTestServer(runningServer *testServer) *httptest.Server {
 	// Setup the test server
 	// Load the data to return
-	dns_stats := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	httpHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Make sure we have a GET request
 		if r.Method != "GET" {
 			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 			return
 		}
 
+		accept := strings.Split(r.Header.Get("Accept"), ",")
+
 		// Make sure we have the correct path
-		if runningServer.StatsFormat == "xml" {
+		if runningServer.StatsFormat == "xml" && slices.Contains(accept, "application/xml") {
 			if strings.HasPrefix(r.URL.Path, "/xml/v3") || r.URL.Path == "/" {
 				// Return the xml
 				w.Header().Set("Content-Type", "application/xml")
 				w.WriteHeader(http.StatusOK)
 				w.Write(runningServer.Content)
+
+				w.(http.Flusher).Flush()
+				r.Context().Done()
+
 				return
 			}
-		} else if runningServer.StatsFormat == "json" {
+		} else if runningServer.StatsFormat == "json" && slices.Contains(accept, "application/json") {
 			if strings.HasPrefix(r.URL.Path, "/json/v1") {
 				// Return the json
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				w.Write(runningServer.Content)
+
+				w.(http.Flusher).Flush()
+				r.Context().Done()
+
 				return
 			}
 		}
-	}))
+	})
+	dns_stats := httptest.NewUnstartedServer(httpHandler)
+
+	runningServer.IsActive = true
 
 	// Get the ip and port of the server
 	var tempIP, tempPort string

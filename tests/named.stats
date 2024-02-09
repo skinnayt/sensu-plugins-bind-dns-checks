@@ -1,0 +1,328 @@
++++ Statistics Dump +++ (1662634494)
+++ Incoming Requests ++
+               24699 QUERY
+                   1 STATUS
+                  13 UPDATE
+++ Incoming Queries ++
+                   1 Others
+                8896 A
+                  94 NS
+                  80 CNAME
+                2604 SOA
+                4037 PTR
+                 282 MX
+                 540 TXT
+                   3 AFSDB
+                6144 AAAA
+                   4 SRV
+                   1 DS
+                1715 DNSKEY
+                   4 TLSA
+                  28 HTTPS
+                 260 IXFR
+                   6 ANY
+++ Outgoing Rcodes ++
+               19210 NOERROR
+                   2 FORMERR
+                1225 SERVFAIL
+                3708 NXDOMAIN
+                   1 NOTIMP
+                 309 REFUSED
+++ Outgoing Queries ++
+[View: default]
+               13920 A
+                  42 NS
+                1500 PTR
+                  86 MX
+                 418 TXT
+                7357 AAAA
+                1946 DS
+                 791 DNSKEY
+[View: _bind]
+++ Name Server Statistics ++
+               21175 IPv4 requests received
+                3540 IPv6 requests received
+                8792 requests with EDNS(0) received
+                  13 requests with TSIG received
+                 867 TCP requests received
+                  10 TCP connection high-water
+                 498 auth queries rejected
+                 297 recursive queries rejected
+                  12 update requests rejected
+               24455 responses sent
+                1316 truncated responses sent
+                8790 responses with EDNS(0) sent
+                  13 responses with TSIG sent
+               18696 queries resulted in successful answer
+               16693 queries resulted in authoritative answer
+                6224 queries resulted in non authoritative answer
+                   8 queries resulted in referral answer
+                 505 queries resulted in nxrrset
+                1225 queries resulted in SERVFAIL
+                3708 queries resulted in NXDOMAIN
+                3142 queries caused recursion
+                 297 other query failures
+                 260 requested transfers completed
+                   1 updates completed
+               22510 UDP queries received
+                 598 TCP queries received
+                   1 NSID option received
+                  90 COOKIE option received
+                  56 COOKIE - client only
+                   6 COOKIE - bad time
+                  28 COOKIE - match
+                 467 EDNS client subnet option received
+++ Zone Maintenance Statistics ++
+                  71 IPv4 notifies sent
+                  56 IPv6 notifies sent
+                  35 IPv4 SOA queries sent
+                  35 IPv4 AXFR requested
+                  35 transfer requests failed
+++ Resolver Statistics ++
+[Common]
+                   8 mismatch responses received
+[View: default]
+                8945 IPv4 queries sent
+               17115 IPv6 queries sent
+                7782 IPv4 responses received
+               16434 IPv6 responses received
+                4962 NXDOMAIN received
+                 682 SERVFAIL received
+                  20 FORMERR received
+                  20 EDNS(0) query failures
+                2410 truncated responses received
+                  18 lame delegations received
+                8399 query retries
+                1841 query timeouts
+                3280 IPv4 NS address fetches
+                3626 IPv6 NS address fetches
+                  38 IPv4 NS address fetch failed
+                1851 IPv6 NS address fetch failed
+                8624 DNSSEC validation attempted
+                1866 DNSSEC validation succeeded
+                6758 DNSSEC NX validation succeeded
+                7393 queries with RTT < 10ms
+               10096 queries with RTT 10-100ms
+                6621 queries with RTT 100-500ms
+                  50 queries with RTT 500-800ms
+                   8 queries with RTT 800-1600ms
+                  17 queries with RTT > 1600ms
+                 256 bucket size
+                 388 REFUSED received
+               20523 COOKIE send with client cookie only
+                3922 COOKIE sent with client and server cookie
+                7970 COOKIE replies received
+                7969 COOKIE client ok
+                  43 bad cookie rcode
+                   1 waited for next item
+                   1 priming queries
+[View: _bind]
+                 256 bucket size
+++ Cache Statistics ++
+[View: default]
+              115915 cache hits
+                  64 cache misses
+                3336 cache hits (from query)
+                5277 cache misses (from query)
+                   0 cache records deleted due to memory exhaustion
+                   0 cache records deleted due to TTL expiration
+               11840 cache database nodes
+             8388608 cache database hash buckets
+            88839756 cache tree memory total
+            73361144 cache tree memory in use
+            73363635 cache tree highest memory in use
+              189504 cache heap memory total
+              164928 cache heap memory in use
+              173120 cache heap highest memory in use
+[View: _bind (Cache: _bind)]
+                   0 cache hits
+                   0 cache misses
+                   0 cache hits (from query)
+                   0 cache misses (from query)
+                   0 cache records deleted due to memory exhaustion
+                   0 cache records deleted due to TTL expiration
+                   0 cache database nodes
+                1024 cache database hash buckets
+               33132 cache tree memory total
+               33004 cache tree memory in use
+               33132 cache tree highest memory in use
+                1088 cache heap memory total
+                1088 cache heap memory in use
+                1088 cache heap highest memory in use
+++ Cache DB RRsets ++
+[View: default]
+                3052 A
+                1779 NS
+                  32 CNAME
+                 270 SOA
+                 416 PTR
+                  34 MX
+                  57 TXT
+                1738 AAAA
+                 374 DS
+                2259 RRSIG
+                 947 NSEC
+                 303 DNSKEY
+                  42 !A
+                   5 !PTR
+                   3 !MX
+                  17 !TXT
+                 745 !AAAA
+                1032 !DS
+                   5 #A
+                   2 #NS
+                  24 #SOA
+                   1 #MX
+                   1 #TXT
+                   4 #AAAA
+                   4 #DS
+                  88 #RRSIG
+                   3 #NSEC
+                  14 #DNSKEY
+                  38 #!AAAA
+                  16 #!DS
+                3472 NXDOMAIN
+                   2 #NXDOMAIN
+[View: _bind (Cache: _bind)]
+++ ADB stats ++
+[View: default]
+                1021 Address hash table size
+                 524 Addresses in hash table
+                1021 Name hash table size
+                 319 Names in hash table
+[View: _bind]
+                1021 Address hash table size
+                1021 Name hash table size
+++ Socket I/O Statistics ++
+                8829 UDP/IPv4 sockets opened
+               14945 UDP/IPv6 sockets opened
+                 252 TCP/IPv4 sockets opened
+                2251 TCP/IPv6 sockets opened
+                   1 Raw sockets opened
+                8805 UDP/IPv4 sockets closed
+               14913 UDP/IPv6 sockets closed
+                 906 TCP/IPv4 sockets closed
+                2419 TCP/IPv6 sockets closed
+                   2 UDP/IPv6 socket bind failures
+                   7 TCP/IPv4 socket connect failures
+                8753 UDP/IPv4 connections established
+               14896 UDP/IPv6 connections established
+                 220 TCP/IPv4 connections established
+                2215 TCP/IPv6 connections established
+                 680 TCP/IPv4 connections accepted
+                 200 TCP/IPv6 connections accepted
+                  21 UDP/IPv4 recv errors
+                  10 UDP/IPv6 recv errors
+                  27 UDP/IPv4 sockets active
+                  36 UDP/IPv6 sockets active
+                  29 TCP/IPv4 sockets active
+                  36 TCP/IPv6 sockets active
+                   1 Raw sockets active
+++ Per Zone Query Statistics ++
+++ Per Zone Glue Cache Statistics ++
+[example.com]
+[.]
+[10.IN-ADDR.ARPA]
+[16.172.IN-ADDR.ARPA]
+[17.172.IN-ADDR.ARPA]
+[18.172.IN-ADDR.ARPA]
+[19.172.IN-ADDR.ARPA]
+[20.172.IN-ADDR.ARPA]
+[21.172.IN-ADDR.ARPA]
+[22.172.IN-ADDR.ARPA]
+[23.172.IN-ADDR.ARPA]
+[24.172.IN-ADDR.ARPA]
+[25.172.IN-ADDR.ARPA]
+[26.172.IN-ADDR.ARPA]
+[27.172.IN-ADDR.ARPA]
+[28.172.IN-ADDR.ARPA]
+[29.172.IN-ADDR.ARPA]
+[30.172.IN-ADDR.ARPA]
+[31.172.IN-ADDR.ARPA]
+[168.192.IN-ADDR.ARPA]
+[64.100.IN-ADDR.ARPA]
+[65.100.IN-ADDR.ARPA]
+[66.100.IN-ADDR.ARPA]
+[67.100.IN-ADDR.ARPA]
+[68.100.IN-ADDR.ARPA]
+[69.100.IN-ADDR.ARPA]
+[70.100.IN-ADDR.ARPA]
+[71.100.IN-ADDR.ARPA]
+[72.100.IN-ADDR.ARPA]
+[73.100.IN-ADDR.ARPA]
+[74.100.IN-ADDR.ARPA]
+[75.100.IN-ADDR.ARPA]
+[76.100.IN-ADDR.ARPA]
+[77.100.IN-ADDR.ARPA]
+[78.100.IN-ADDR.ARPA]
+[79.100.IN-ADDR.ARPA]
+[80.100.IN-ADDR.ARPA]
+[81.100.IN-ADDR.ARPA]
+[82.100.IN-ADDR.ARPA]
+[83.100.IN-ADDR.ARPA]
+[84.100.IN-ADDR.ARPA]
+[85.100.IN-ADDR.ARPA]
+[86.100.IN-ADDR.ARPA]
+[87.100.IN-ADDR.ARPA]
+[88.100.IN-ADDR.ARPA]
+[89.100.IN-ADDR.ARPA]
+[90.100.IN-ADDR.ARPA]
+[91.100.IN-ADDR.ARPA]
+[92.100.IN-ADDR.ARPA]
+[93.100.IN-ADDR.ARPA]
+[94.100.IN-ADDR.ARPA]
+[95.100.IN-ADDR.ARPA]
+[96.100.IN-ADDR.ARPA]
+[97.100.IN-ADDR.ARPA]
+[98.100.IN-ADDR.ARPA]
+[99.100.IN-ADDR.ARPA]
+[100.100.IN-ADDR.ARPA]
+[101.100.IN-ADDR.ARPA]
+[102.100.IN-ADDR.ARPA]
+[103.100.IN-ADDR.ARPA]
+[104.100.IN-ADDR.ARPA]
+[105.100.IN-ADDR.ARPA]
+[106.100.IN-ADDR.ARPA]
+[107.100.IN-ADDR.ARPA]
+[108.100.IN-ADDR.ARPA]
+[109.100.IN-ADDR.ARPA]
+[110.100.IN-ADDR.ARPA]
+[111.100.IN-ADDR.ARPA]
+[112.100.IN-ADDR.ARPA]
+[113.100.IN-ADDR.ARPA]
+[114.100.IN-ADDR.ARPA]
+[115.100.IN-ADDR.ARPA]
+[116.100.IN-ADDR.ARPA]
+[117.100.IN-ADDR.ARPA]
+[118.100.IN-ADDR.ARPA]
+[119.100.IN-ADDR.ARPA]
+[120.100.IN-ADDR.ARPA]
+[121.100.IN-ADDR.ARPA]
+[122.100.IN-ADDR.ARPA]
+[123.100.IN-ADDR.ARPA]
+[124.100.IN-ADDR.ARPA]
+[125.100.IN-ADDR.ARPA]
+[126.100.IN-ADDR.ARPA]
+[127.100.IN-ADDR.ARPA]
+[0.IN-ADDR.ARPA]
+[127.IN-ADDR.ARPA]
+[254.169.IN-ADDR.ARPA]
+[2.0.192.IN-ADDR.ARPA]
+[100.51.198.IN-ADDR.ARPA]
+[113.0.203.IN-ADDR.ARPA]
+[255.255.255.255.IN-ADDR.ARPA]
+[0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA]
+[1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.IP6.ARPA]
+[D.F.IP6.ARPA]
+[8.E.F.IP6.ARPA]
+[9.E.F.IP6.ARPA]
+[A.E.F.IP6.ARPA]
+[B.E.F.IP6.ARPA]
+[8.B.D.0.1.0.0.2.IP6.ARPA]
+[EMPTY.AS112.ARPA]
+[HOME.ARPA]
+[version.bind (view: _bind)]
+[hostname.bind (view: _bind)]
+[authors.bind (view: _bind)]
+[id.server (view: _bind)]
+--- Statistics Dump --- (1662634494)

@@ -2,10 +2,8 @@ package main
 
 import (
 	"os"
-	"plugin"
 	"testing"
 
-	"github.com/smartystreets/assertions/assert"
 	"github.com/stretchr/testify/assert"
 )
 

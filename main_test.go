@@ -24,7 +24,7 @@ func TestCheckArgs(t *testing.T) {
 	// Make sure we can only pass in file, xml or json for the statistics format
 	// When the format is file, we need to specify the file path
 	plugin.StatisticsFormat = "file"
-	plugin.StatisticsFilePath = "/var/named/named.stats"
+	plugin.StatisticsFilePath = "tests/named.stats"
 	ok, err := checkArgs(nil)
 	assert.Equal(ok, 0)
 	assert.NoError(err)

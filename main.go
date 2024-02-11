@@ -282,6 +282,10 @@ func readStatisticsChannel() error {
 
 	defer statsResp.Body.Close()
 
+	if statsResp.StatusCode != 200 {
+		return fmt.Errorf("error reading statistics channel: %s", statsResp.Status)
+	}
+
 	// Read the XML statistics
 	var statsData []byte
 	readData := make([]byte, 1024)

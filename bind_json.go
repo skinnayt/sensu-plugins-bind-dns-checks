@@ -949,7 +949,7 @@ type ZoneView struct {
 	} `json:"qtypes"`
 }
 
-func readJsonStats(statsData []byte) error {
+func ReadJsonStats(statsData []byte) error {
 	// Read the JSON statistics
 	var jsonStats bindJsonStats
 

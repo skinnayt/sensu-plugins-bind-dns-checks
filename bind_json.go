@@ -831,108 +831,6 @@ type RCode struct {
 func (r *RCode) toMetrics(metric_time time.Time) []*Metric {
 	metrics := make([]*Metric, 0)
 	metrics = append(metrics, &Metric{
-		Name:      "NOERROR",
-		Value:     int64(r.Noerror),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "FORMERR",
-		Value:     int64(r.Formerr),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "SERVFAIL",
-		Value:     int64(r.Servfail),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "NXDOMAIN",
-		Value:     int64(r.Nxdomain),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "NOTIMP",
-		Value:     int64(r.Notimp),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "REFUSED",
-		Value:     int64(r.Refused),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "YXDOMAIN",
-		Value:     int64(r.Yxdomain),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "YXRRSET",
-		Value:     int64(r.Yxrrset),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "NXRRSET",
-		Value:     int64(r.Nxrrset),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "NOTAUTH",
-		Value:     int64(r.Notauth),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "NOTZONE",
-		Value:     int64(r.Notzone),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "RESERVED11",
-		Value:     int64(r.Reserved11),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "RESERVED12",
-		Value:     int64(r.Reserved12),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "RESERVED13",
-		Value:     int64(r.Reserved13),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "RESERVED14",
-		Value:     int64(r.Reserved14),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "RESERVED15",
-		Value:     int64(r.Reserved15),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
-		Name:      "BADVERS",
-		Value:     int64(r.Badvers),
-		Timestamp: metric_time,
-		Tags:      []*MetricTag{},
-	})
-	metrics = append(metrics, &Metric{
 		Name:      "17",
 		Value:     int64(r.R17),
 		Timestamp: metric_time,
@@ -969,8 +867,176 @@ func (r *RCode) toMetrics(metric_time time.Time) []*Metric {
 		Tags:      []*MetricTag{},
 	})
 	metrics = append(metrics, &Metric{
-		Name:      "BADCOOKIE",
+		Name:      "AuthQryRej",
+		Value:     int64(r.AuthQryRej),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Badcookie",
 		Value:     int64(r.Badcookie),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Badvers",
+		Value:     int64(r.Badvers),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Formerr",
+		Value:     int64(r.Formerr),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Noerror",
+		Value:     int64(r.Noerror),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Notauth",
+		Value:     int64(r.Notauth),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Notimp",
+		Value:     int64(r.Notimp),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Notzone",
+		Value:     int64(r.Notzone),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Nxdomain",
+		Value:     int64(r.Nxdomain),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Nxrrset",
+		Value:     int64(r.Nxrrset),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QryAuthAns",
+		Value:     int64(r.QryAuthAns),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QryNXDOMAIN",
+		Value:     int64(r.QryNXDOMAIN),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QryNxrrset",
+		Value:     int64(r.QryNxrrset),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QrySuccess",
+		Value:     int64(r.QrySuccess),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QryTCP",
+		Value:     int64(r.QryTCP),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "QryUDP",
+		Value:     int64(r.QryUDP),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Refused",
+		Value:     int64(r.Refused),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Reserved11",
+		Value:     int64(r.Reserved11),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Reserved12",
+		Value:     int64(r.Reserved12),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Reserved13",
+		Value:     int64(r.Reserved13),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Reserved14",
+		Value:     int64(r.Reserved14),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Reserved15",
+		Value:     int64(r.Reserved15),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "RecQryRej",
+		Value:     int64(r.RecQryRej),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Servfail",
+		Value:     int64(r.Servfail),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "UpdateDone",
+		Value:     int64(r.UpdateDone),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "XfrRej",
+		Value:     int64(r.XfrRej),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "XfrReqDone",
+		Value:     int64(r.XfrReqDone),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Yxdomain",
+		Value:     int64(r.Yxdomain),
+		Timestamp: metric_time,
+		Tags:      []*MetricTag{},
+	})
+	metrics = append(metrics, &Metric{
+		Name:      "Yxrrset",
+		Value:     int64(r.Yxrrset),
 		Timestamp: metric_time,
 		Tags:      []*MetricTag{},
 	})

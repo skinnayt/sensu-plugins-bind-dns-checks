@@ -87,6 +87,10 @@ var (
 
 type MetricTag [2]string
 
+func (mt *MetricTag) String() string {
+	return fmt.Sprintf("%s_%s", mt[0], mt[1])
+}
+
 type Metric struct {
 	Name      string
 	Value     int64
@@ -99,8 +103,22 @@ type namedStats struct {
 	curLevel  string
 }
 
-func (m *Metric) String() string {
-	return fmt.Sprintf("%s %s: %d", m.Timestamp, m.Name, m.Value)
+func (m *Metric) String(tag_prefix string) string {
+	var tags []string
+	if tag_prefix != "" {
+		tags = append(tags, tag_prefix)
+	}
+	for _, tag := range m.Tags {
+		tags = append(tags, tag.String())
+	}
+
+	return fmt.Sprintf(
+		"%s.%s %d %d",
+		strings.Join(tags, "."),
+		strings.Replace(m.Name, " ", "_", -1),
+		m.Value,
+		m.Timestamp.Unix(),
+	)
 }
 
 func main() {
@@ -309,20 +327,6 @@ func readStatisticsChannel() error {
 func OutputMetricsGraphite() {
 	// Output metrics in Graphite format
 	for _, metric := range plugin.returnMetrics {
-		outTags := "bind.dns"
-		for i := len(metric.Tags) - 1; i >= 0; i-- {
-			if len(metric.Tags[i]) == 2 {
-				outTags = fmt.Sprintf("%s.%s_%s", outTags, metric.Tags[i][0], metric.Tags[i][1])
-			} else {
-				outTags = fmt.Sprintf("%s.%s", outTags, metric.Tags[i][0])
-			}
-		}
-
-		fmt.Printf("%s.%s %d %d\n",
-			outTags,
-			strings.Replace(metric.Name, " ", "_", -1),
-			metric.Value,
-			metric.Timestamp.Unix(),
-		)
+		fmt.Println(metric.String("bind.dns"))
 	}
 }

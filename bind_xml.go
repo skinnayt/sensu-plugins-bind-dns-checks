@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -177,8 +178,6 @@ func (xi *XmlIp) toMetrics(metric_time time.Time) []*Metric {
 }
 
 func ReadXmlStats(statsData []byte) error {
-	fmt.Printf("Read %d bytes of XML\n", len(statsData))
-
 	var xmlStats bindXmlStats
 
 	// Parse the XML statistics
@@ -193,65 +192,112 @@ func ReadXmlStats(statsData []byte) error {
 	// Process the memory context statistics
 	contextMetrics := make([]*Metric, 0, 10)
 	for _, context := range xmlStats.Memory.Contexts.Context {
-		context_metric := &Metric{
-			Name:      context.ID,
+		context_name_tag := &MetricTag{"context", context.Name}
+		context_id_tag := &MetricTag{"context_id", context.ID}
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "References",
 			Value:     int64(context.References),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{},
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		blocksize, err := strconv.ParseInt(context.Blocksize, 10, 64)
+		if err == nil {
+			contextMetrics = append(contextMetrics, &Metric{
+				Name:      "BlockSize",
+				Value:     int64(blocksize),
+				Timestamp: xmlStats.Server.CurrentTime,
+				Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			})
 		}
-		if context.Name != "" {
-			context_metric.Tags = append(context_metric.Tags, &MetricTag{"name", context.Name})
-		}
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"blocksize", context.Blocksize})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"hiwater", strconv.Itoa(context.Hiwater)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"inuse", strconv.Itoa(context.Inuse)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"lowater", strconv.Itoa(context.Lowater)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"malloced", strconv.Itoa(context.Malloced)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"maxinuse", strconv.Itoa(context.Maxinuse)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"maxmalloced", strconv.Itoa(context.Maxmalloced)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"pools", strconv.Itoa(context.Pools)})
-		context_metric.Tags = append(context_metric.Tags, &MetricTag{"total", strconv.Itoa(context.Total)})
-		contextMetrics = append(contextMetrics, context_metric)
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Hiwater",
+			Value:     int64(context.Hiwater),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "InUse",
+			Value:     int64(context.Inuse),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Lowater",
+			Value:     int64(context.Lowater),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Malloced",
+			Value:     int64(context.Malloced),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Maxinuse",
+			Value:     int64(context.Maxinuse),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Maxmalloced",
+			Value:     int64(context.Maxmalloced),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Pools",
+			Value:     int64(context.Pools),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Total",
+			Value:     int64(context.Total),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+		})
 	}
 	returnMetrics = append(returnMetrics, contextMetrics...)
 
 	// Process the memory statistics
+	memory_tag := &MetricTag{"memory", "summary"}
 	memoryMetrics := make([]*Metric, 0, 10)
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.BlockSize",
+		Name:      "BlockSize",
 		Value:     int64(xmlStats.Memory.Summary.BlockSize),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.ContextSize",
+		Name:      "ContextSize",
 		Value:     int64(xmlStats.Memory.Summary.ContextSize),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.InUse",
+		Name:      "InUse",
 		Value:     int64(xmlStats.Memory.Summary.InUse),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.Lost",
+		Name:      "Lost",
 		Value:     int64(xmlStats.Memory.Summary.Lost),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.Malloced",
+		Name:      "Malloced",
 		Value:     int64(xmlStats.Memory.Summary.Malloced),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	memoryMetrics = append(memoryMetrics, &Metric{
-		Name:      "memory.summary.TotalUse",
+		Name:      "TotalUse",
 		Value:     int64(xmlStats.Memory.Summary.TotalUse),
 		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
+		Tags:      []*MetricTag{memory_tag},
 	})
 	returnMetrics = append(returnMetrics, memoryMetrics...)
 
@@ -321,15 +367,31 @@ func ReadXmlStats(statsData []byte) error {
 
 	// Process the traffic statistics
 	trafficMetrics := make([]*Metric, 0, 10)
-	trafficMetrics = append(trafficMetrics, xmlStats.Traffic.Ipv4.toMetrics(xmlStats.Server.CurrentTime)...)
-	trafficMetrics = append(trafficMetrics, xmlStats.Traffic.Ipv6.toMetrics(xmlStats.Server.CurrentTime)...)
+	ipv4_metrics := xmlStats.Traffic.Ipv4.toMetrics(xmlStats.Server.CurrentTime)
+	ipv4_tag := &MetricTag{"ipver", "ipv4"}
+	for _, metric := range ipv4_metrics {
+		metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
+		metric_tags = append(metric_tags, ipv4_tag)
+		metric_tags = append(metric_tags, metric.Tags...)
+		metric.Tags = metric_tags
+	}
+	trafficMetrics = append(trafficMetrics, ipv4_metrics...)
+	ipv6_metrics := xmlStats.Traffic.Ipv6.toMetrics(xmlStats.Server.CurrentTime)
+	ipv6_tag := &MetricTag{"ipver", "ipv6"}
+	for _, metric := range ipv6_metrics {
+		metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
+		metric_tags = append(metric_tags, ipv6_tag)
+		metric_tags = append(metric_tags, metric.Tags...)
+		metric.Tags = metric_tags
+	}
+	trafficMetrics = append(trafficMetrics, ipv6_metrics...)
 	returnMetrics = append(returnMetrics, trafficMetrics...)
 
 	// Process the view statistics
 	viewMetrics := make([]*Metric, 0, 10)
 	for _, view := range xmlStats.Views.View {
 		// Zones
-		view_tag := &MetricTag{"name", view.Name}
+		view_tag := &MetricTag{"view", view.Name}
 		cache_tag := &MetricTag{"cache", view.Cache.Name}
 		for _, cache_counter := range view.Cache.Rrset {
 			cache_metric := &Metric{
@@ -356,7 +418,8 @@ func ReadXmlStats(statsData []byte) error {
 		for _, zone := range view.Zones.Zone {
 			zone_tags := make([]*MetricTag, 0, 10)
 			zone_tags = append(zone_tags, view_tag)
-			zone_tags = append(zone_tags, &MetricTag{"name", zone.Name})
+			zone_tags = append(zone_tags, cache_tag)
+			zone_tags = append(zone_tags, &MetricTag{"name", strings.Replace(zone.Name, ".", "_", -1)})
 			zone_tags = append(zone_tags, &MetricTag{"rdataclass", zone.Rdataclass})
 			zone_tags = append(zone_tags, &MetricTag{"type", zone.Type})
 			for _, zone_counter := range zone.Counters {

@@ -423,8 +423,38 @@ func ReadXmlStats(statsData []byte) error {
 		for _, zone := range view.Zones.Zone {
 			zone_tags := make([]*MetricTag, 0, 10)
 			zone_tags = append(zone_tags, view_tag)
-			// zone_tags = append(zone_tags, cache_tag)
-			zone_tags = append(zone_tags, &MetricTag{"zone", strings.Replace(zone.Name, ".", "_", -1)})
+			zonename := ""
+			if strings.Contains(strings.ToLower(zone.Name), "ip6.arpa") {
+				zone_name := zone.Name
+				zone_grps := make([]string, 0, 10)
+				if strings.Contains(zone_name, "IP6.ARPA") {
+					zone_grps = append(zone_grps, "IP6.ARPA")
+					zone_name = strings.Replace(zone_name, "IP6.ARPA", "", 1)
+				} else {
+					zone_grps = append(zone_grps, "ip6.arpa")
+					zone_name = strings.Replace(zone_name, "ip6.arpa", "", 1)
+				}
+				zone_name = strings.Trim(zone_name, ".")
+				zone_name = strings.Replace(zone_name, ".", "", -1)
+				for {
+					if len(zone_name) < 4 {
+						if len(zone_name) > 0 {
+							zone_grps = append(zone_grps, zone_name)
+						}
+						break
+					}
+					zone_grp := zone_name[len(zone_name)-4:]
+					zone_grps = append(zone_grps, zone_grp)
+					zone_name = zone_name[:len(zone_name)-4]
+				}
+				for idx := len(zone_grps) - 1; idx >= 0; idx-- {
+					zonename = zonename + zone_grps[idx] + "."
+				}
+				zonename = zonename[:len(zonename)-1]
+			} else {
+				zonename = zone.Name
+			}
+			zone_tags = append(zone_tags, &MetricTag{"zone", strings.Replace(zonename, ".", "_", -1)})
 			zone_tags = append(zone_tags, &MetricTag{"class", zone.Rdataclass})
 			zone_tags = append(zone_tags, &MetricTag{"type", zone.Type})
 			for _, zone_counter := range zone.Counters {

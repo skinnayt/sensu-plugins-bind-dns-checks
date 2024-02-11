@@ -1002,7 +1002,38 @@ type ZoneView struct {
 
 func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
 	metrics := make([]*Metric, 0)
-	zone_name_tag := &MetricTag{"zone", strings.Replace(z.Name, ".", "_", -1)}
+	zonename := ""
+	if strings.Contains(strings.ToLower(z.Name), "ip6.arpa") {
+		zone_grps := make([]string, 0, 10)
+		zone_name := z.Name
+		if strings.Contains(zone_name, "IP6.ARPA") {
+			zone_name = strings.Replace(zone_name, "IP6.ARPA", "", 1)
+			zone_grps = append(zone_grps, "IP6.ARPA")
+		} else {
+			zone_name = strings.Replace(zone_name, "ip6.arpa", "", 1)
+			zone_grps = append(zone_grps, "ip6.arpa")
+		}
+		zone_name = strings.Trim(zone_name, ".")
+		zone_name = strings.Replace(zone_name, ".", "", -1)
+		for {
+			if len(zone_name) < 4 {
+				if len(zone_name) > 0 {
+					zone_grps = append(zone_grps, zone_name)
+				}
+				break
+			}
+			zone_grp := zone_name[len(zone_name)-4:]
+			zone_grps = append(zone_grps, zone_grp)
+			zone_name = zone_name[:len(zone_name)-4]
+		}
+		for idx := len(zone_grps) - 1; idx >= 0; idx-- {
+			zonename = zonename + zone_grps[idx] + "."
+		}
+		zonename = zonename[:len(zonename)-1]
+	} else {
+		zonename = z.Name
+	}
+	zone_name_tag := &MetricTag{"zone", strings.Replace(zonename, ".", "_", -1)}
 	zone_class_tag := &MetricTag{"class", z.Class}
 	zone_type_tag := &MetricTag{"type", z.Type}
 

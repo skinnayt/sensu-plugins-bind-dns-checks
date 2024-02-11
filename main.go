@@ -79,7 +79,7 @@ var (
 			Argument:  "output-format",
 			Shorthand: "o",
 			Default:   "",
-			Usage:     "The format to output the metrics in (graphite)",
+			Usage:     "The format to output the metrics in (graphite, prometheus)",
 			Value:     &plugin.OutputFormat,
 		},
 	}
@@ -103,7 +103,7 @@ type namedStats struct {
 	curLevel  string
 }
 
-func (m *Metric) String(tag_prefix string) string {
+func (m *Metric) Graphite(tag_prefix string) string {
 	var tags []string
 	if tag_prefix != "" {
 		tags = append(tags, tag_prefix)
@@ -116,6 +116,21 @@ func (m *Metric) String(tag_prefix string) string {
 		"%s.%s %d %d",
 		strings.Join(tags, "."),
 		strings.Replace(m.Name, " ", "_", -1),
+		m.Value,
+		m.Timestamp.Unix(),
+	)
+}
+
+func (m *Metric) Prometheus() string {
+	var tags []string
+	for _, tag := range m.Tags {
+		tags = append(tags, fmt.Sprintf("%s=\"%s\"", tag[0], tag[1]))
+	}
+
+	return fmt.Sprintf(
+		"%s {%s} %d %d",
+		strings.Replace(m.Name, " ", "_", -1),
+		strings.Join(tags, ","),
 		m.Value,
 		m.Timestamp.Unix(),
 	)
@@ -175,6 +190,8 @@ func executeCheck(event *corev2.Event) (int, error) {
 	// Dump out the metrics loaded from the statistics file or channel
 	if plugin.OutputFormat == "graphite" {
 		OutputMetricsGraphite()
+	} else if plugin.OutputFormat == "prometheus" {
+		OutputMetricsPrometheus()
 	}
 
 	return sensu.CheckStateOK, nil
@@ -331,6 +348,13 @@ func readStatisticsChannel() error {
 func OutputMetricsGraphite() {
 	// Output metrics in Graphite format
 	for _, metric := range plugin.returnMetrics {
-		fmt.Println(metric.String("bind.dns"))
+		fmt.Println(metric.Graphite("bind.dns"))
+	}
+}
+
+func OutputMetricsPrometheus() {
+	// Output metrics in Prometheus format
+	for _, metric := range plugin.returnMetrics {
+		fmt.Println(metric.Prometheus())
 	}
 }

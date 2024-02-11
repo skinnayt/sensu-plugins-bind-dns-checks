@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -109,502 +110,7 @@ type bindJsonStats struct {
 		Lost        int        `json:"Lost"`
 		Contexts    []*Context `json:"Contexts"`
 	} `json:"memory"`
-	Traffic struct {
-		DnsUDPRequestsSizesReceivedIPv4 struct {
-			U0_15    int `json:"0-15,omitempty"`
-			U16_31   int `json:"16-31,omitempty"`
-			U32_47   int `json:"32-47,omitempty"`
-			U48_63   int `json:"48-63,omitempty"`
-			U64_79   int `json:"64-79,omitempty"`
-			U80_95   int `json:"80-95,omitempty"`
-			U96_111  int `json:"96-111,omitempty"`
-			U112_127 int `json:"112-127,omitempty"`
-			U128_143 int `json:"128-143,omitempty"`
-			U144_159 int `json:"144-159,omitempty"`
-		} `json:"dns-udp-requests-sizes-received-ipv4"`
-		DnsUDPResponsesSizesSentIPv4 struct {
-			U0_15      int `json:"0-15,omitempty"`
-			U16_31     int `json:"16-31,omitempty"`
-			U32_47     int `json:"32-47,omitempty"`
-			U48_63     int `json:"48-63,omitempty"`
-			U64_79     int `json:"64-79,omitempty"`
-			U80_95     int `json:"80-95,omitempty"`
-			U96_111    int `json:"96-111,omitempty"`
-			U112_127   int `json:"112-127,omitempty"`
-			U128_143   int `json:"128-143,omitempty"`
-			U144_159   int `json:"144-159,omitempty"`
-			U160_175   int `json:"160-175,omitempty"`
-			U176_191   int `json:"176-191,omitempty"`
-			U192_207   int `json:"192-207,omitempty"`
-			U208_223   int `json:"208-223,omitempty"`
-			U224_239   int `json:"224-239,omitempty"`
-			U240_255   int `json:"240-255,omitempty"`
-			U256_271   int `json:"256-271,omitempty"`
-			U272_287   int `json:"272-287,omitempty"`
-			U288_303   int `json:"288-303,omitempty"`
-			U304_319   int `json:"304-319,omitempty"`
-			U320_335   int `json:"320-335,omitempty"`
-			U336_351   int `json:"336-351,omitempty"`
-			U352_367   int `json:"352-367,omitempty"`
-			U368_383   int `json:"368-383,omitempty"`
-			U384_399   int `json:"384-399,omitempty"`
-			U400_415   int `json:"400-415,omitempty"`
-			U416_431   int `json:"416-431,omitempty"`
-			U432_447   int `json:"432-447,omitempty"`
-			U448_463   int `json:"448-463,omitempty"`
-			U464_479   int `json:"464-479,omitempty"`
-			U480_495   int `json:"480-495,omitempty"`
-			U496_511   int `json:"496-511,omitempty"`
-			U512_527   int `json:"512-527,omitempty"`
-			U528_543   int `json:"528-543,omitempty"`
-			U544_559   int `json:"544-559,omitempty"`
-			U560_575   int `json:"560-575,omitempty"`
-			U576_591   int `json:"576-591,omitempty"`
-			U592_607   int `json:"592-607,omitempty"`
-			U608_623   int `json:"608-623,omitempty"`
-			U624_639   int `json:"624-639,omitempty"`
-			U640_655   int `json:"640-655,omitempty"`
-			U656_671   int `json:"656-671,omitempty"`
-			U672_687   int `json:"672-687,omitempty"`
-			U688_703   int `json:"688-703,omitempty"`
-			U704_719   int `json:"704-719,omitempty"`
-			U720_735   int `json:"720-735,omitempty"`
-			U736_751   int `json:"736-751,omitempty"`
-			U752_767   int `json:"752-767,omitempty"`
-			U768_783   int `json:"768-783,omitempty"`
-			U784_799   int `json:"784-799,omitempty"`
-			U800_815   int `json:"800-815,omitempty"`
-			U816_831   int `json:"816-831,omitempty"`
-			U832_847   int `json:"832-847,omitempty"`
-			U848_863   int `json:"848-863,omitempty"`
-			U864_879   int `json:"864-879,omitempty"`
-			U880_895   int `json:"880-895,omitempty"`
-			U896_911   int `json:"896-911,omitempty"`
-			U912_927   int `json:"912-927,omitempty"`
-			U928_943   int `json:"928-943,omitempty"`
-			U944_959   int `json:"944-959,omitempty"`
-			U960_975   int `json:"960-975,omitempty"`
-			U976_991   int `json:"976-991,omitempty"`
-			U992_1007  int `json:"992-1007,omitempty"`
-			U1008_1023 int `json:"1008-1023,omitempty"`
-			U1024_1039 int `json:"1024-1039,omitempty"`
-			U1040_1055 int `json:"1040-1055,omitempty"`
-			U1056_1071 int `json:"1056-1071,omitempty"`
-			U1072_1087 int `json:"1072-1087,omitempty"`
-			U1088_1103 int `json:"1088-1103,omitempty"`
-			U1104_1119 int `json:"1104-1119,omitempty"`
-			U1120_1135 int `json:"1120-1135,omitempty"`
-			U1136_1151 int `json:"1136-1151,omitempty"`
-			U1152_1167 int `json:"1152-1167,omitempty"`
-			U1168_1183 int `json:"1168-1183,omitempty"`
-			U1184_1199 int `json:"1184-1199,omitempty"`
-			U1200_1215 int `json:"1200-1215,omitempty"`
-			U1216_1231 int `json:"1216-1231,omitempty"`
-		} `json:"dns-udp-responses-sizes-sent-ipv4"`
-		DnsTCPRequestsSizesReceivedIPv4 struct {
-			T0_15  int `json:"0-15,omitempty"`
-			T16_31 int `json:"16-31,omitempty"`
-			T32_47 int `json:"32-47,omitempty"`
-			T48_63 int `json:"48-63,omitempty"`
-			T64_79 int `json:"64-79,omitempty"`
-			T80_95 int `json:"80-95,omitempty"`
-		} `json:"dns-tcp-requests-sizes-received-ipv4"`
-		DnsTCPResponsesSizesSentIPv4 struct {
-			T0_15      int `json:"0-15,omitempty"`
-			T16_31     int `json:"16-31,omitempty"`
-			T32_47     int `json:"32-47,omitempty"`
-			T48_63     int `json:"48-63,omitempty"`
-			T64_79     int `json:"64-79,omitempty"`
-			T80_95     int `json:"80-95,omitempty"`
-			T96_111    int `json:"96-111,omitempty"`
-			T112_127   int `json:"112-127,omitempty"`
-			T128_143   int `json:"128-143,omitempty"`
-			T144_159   int `json:"144-159,omitempty"`
-			T160_175   int `json:"160-175,omitempty"`
-			T176_191   int `json:"176-191,omitempty"`
-			T192_207   int `json:"192-207,omitempty"`
-			T208_223   int `json:"208-223,omitempty"`
-			T224_239   int `json:"224-239,omitempty"`
-			T240_255   int `json:"240-255,omitempty"`
-			T256_271   int `json:"256-271,omitempty"`
-			T272_287   int `json:"272-287,omitempty"`
-			T288_303   int `json:"288-303,omitempty"`
-			T304_319   int `json:"304-319,omitempty"`
-			T320_335   int `json:"320-335,omitempty"`
-			T336_351   int `json:"336-351,omitempty"`
-			T352_367   int `json:"352-367,omitempty"`
-			T368_383   int `json:"368-383,omitempty"`
-			T384_399   int `json:"384-399,omitempty"`
-			T400_415   int `json:"400-415,omitempty"`
-			T416_431   int `json:"416-431,omitempty"`
-			T432_447   int `json:"432-447,omitempty"`
-			T448_463   int `json:"448-463,omitempty"`
-			T464_479   int `json:"464-479,omitempty"`
-			T480_495   int `json:"480-495,omitempty"`
-			T496_511   int `json:"496-511,omitempty"`
-			T512_527   int `json:"512-527,omitempty"`
-			T528_543   int `json:"528-543,omitempty"`
-			T544_559   int `json:"544-559,omitempty"`
-			T560_575   int `json:"560-575,omitempty"`
-			T576_591   int `json:"576-591,omitempty"`
-			T592_607   int `json:"592-607,omitempty"`
-			T608_623   int `json:"608-623,omitempty"`
-			T624_639   int `json:"624-639,omitempty"`
-			T640_655   int `json:"640-655,omitempty"`
-			T656_671   int `json:"656-671,omitempty"`
-			T672_687   int `json:"672-687,omitempty"`
-			T688_703   int `json:"688-703,omitempty"`
-			T704_719   int `json:"704-719,omitempty"`
-			T720_735   int `json:"720-735,omitempty"`
-			T736_751   int `json:"736-751,omitempty"`
-			T752_767   int `json:"752-767,omitempty"`
-			T768_783   int `json:"768-783,omitempty"`
-			T784_799   int `json:"784-799,omitempty"`
-			T800_815   int `json:"800-815,omitempty"`
-			T816_831   int `json:"816-831,omitempty"`
-			T832_847   int `json:"832-847,omitempty"`
-			T848_863   int `json:"848-863,omitempty"`
-			T864_879   int `json:"864-879,omitempty"`
-			T880_895   int `json:"880-895,omitempty"`
-			T896_911   int `json:"896-911,omitempty"`
-			T912_927   int `json:"912-927,omitempty"`
-			T928_943   int `json:"928-943,omitempty"`
-			T944_959   int `json:"944-959,omitempty"`
-			T960_975   int `json:"960-975,omitempty"`
-			T976_991   int `json:"976-991,omitempty"`
-			T992_1007  int `json:"992-1007,omitempty"`
-			T1008_1023 int `json:"1008-1023,omitempty"`
-			T1024_1039 int `json:"1024-1039,omitempty"`
-			T1040_1055 int `json:"1040-1055,omitempty"`
-			T1056_1071 int `json:"1056-1071,omitempty"`
-			T1072_1087 int `json:"1072-1087,omitempty"`
-			T1088_1103 int `json:"1088-1103,omitempty"`
-			T1104_1119 int `json:"1104-1119,omitempty"`
-			T1120_1135 int `json:"1120-1135,omitempty"`
-			T1136_1151 int `json:"1136-1151,omitempty"`
-			T1152_1167 int `json:"1152-1167,omitempty"`
-			T1168_1183 int `json:"1168-1183,omitempty"`
-			T1184_1199 int `json:"1184-1199,omitempty"`
-			T1200_1215 int `json:"1200-1215,omitempty"`
-			T1216_1231 int `json:"1216-1231,omitempty"`
-			T1232_1247 int `json:"1232-1247,omitempty"`
-			T1248_1263 int `json:"1248-1263,omitempty"`
-			T1264_1279 int `json:"1264-1279,omitempty"`
-			T1280_1295 int `json:"1280-1295,omitempty"`
-			T1296_1311 int `json:"1296-1311,omitempty"`
-			T1312_1327 int `json:"1312-1327,omitempty"`
-			T1328_1343 int `json:"1328-1343,omitempty"`
-			T1344_1359 int `json:"1344-1359,omitempty"`
-			T1360_1375 int `json:"1360-1375,omitempty"`
-			T1376_1391 int `json:"1376-1391,omitempty"`
-			T1392_1407 int `json:"1392-1407,omitempty"`
-			T1408_1423 int `json:"1408-1423,omitempty"`
-			T1424_1439 int `json:"1424-1439,omitempty"`
-			T1440_1455 int `json:"1440-1455,omitempty"`
-			T1456_1471 int `json:"1456-1471,omitempty"`
-			T1472_1487 int `json:"1472-1487,omitempty"`
-			T1488_1503 int `json:"1488-1503,omitempty"`
-			T1504_1519 int `json:"1504-1519,omitempty"`
-			T1520_1535 int `json:"1520-1535,omitempty"`
-			T1536_1551 int `json:"1536-1551,omitempty"`
-			T1552_1567 int `json:"1552-1567,omitempty"`
-			T1568_1583 int `json:"1568-1583,omitempty"`
-			T1584_1599 int `json:"1584-1599,omitempty"`
-			T1600_1615 int `json:"1600-1615,omitempty"`
-			T1616_1631 int `json:"1616-1631,omitempty"`
-			T1632_1647 int `json:"1632-1647,omitempty"`
-			T1648_1663 int `json:"1648-1663,omitempty"`
-			T1664_1679 int `json:"1664-1679,omitempty"`
-			T1680_1695 int `json:"1680-1695,omitempty"`
-			T1696_1711 int `json:"1696-1711,omitempty"`
-			T1712_1727 int `json:"1712-1727,omitempty"`
-			T1728_1743 int `json:"1728-1743,omitempty"`
-			T1744_1759 int `json:"1744-1759,omitempty"`
-			T1760_1775 int `json:"1760-1775,omitempty"`
-			T1776_1791 int `json:"1776-1791,omitempty"`
-			T1792_1807 int `json:"1792-1807,omitempty"`
-			T1808_1823 int `json:"1808-1823,omitempty"`
-			T1824_1839 int `json:"1824-1839,omitempty"`
-			T1840_1855 int `json:"1840-1855,omitempty"`
-			T1856_1871 int `json:"1856-1871,omitempty"`
-			T1872_1887 int `json:"1872-1887,omitempty"`
-			T1888_1903 int `json:"1888-1903,omitempty"`
-			T1904_1919 int `json:"1904-1919,omitempty"`
-			T1920_1935 int `json:"1920-1935,omitempty"`
-			T1936_1951 int `json:"1936-1951,omitempty"`
-			T1952_1967 int `json:"1952-1967,omitempty"`
-			T1968_1983 int `json:"1968-1983,omitempty"`
-			T1984_1999 int `json:"1984-1999,omitempty"`
-			T2000_2015 int `json:"2000-2015,omitempty"`
-			T2016_2031 int `json:"2016-2031,omitempty"`
-			T2032_2047 int `json:"2032-2047,omitempty"`
-			T2048_2063 int `json:"2048-2063,omitempty"`
-			T2064_2079 int `json:"2064-2079,omitempty"`
-			T2080_2095 int `json:"2080-2095,omitempty"`
-			T2096_2111 int `json:"2096-2111,omitempty"`
-			T2112_2127 int `json:"2112-2127,omitempty"`
-			T2128_2143 int `json:"2128-2143,omitempty"`
-			T2144_2159 int `json:"2144-2159,omitempty"`
-			T2160_2175 int `json:"2160-2175,omitempty"`
-			T2176_2191 int `json:"2176-2191,omitempty"`
-			T2192_2207 int `json:"2192-2207,omitempty"`
-			T2208_2223 int `json:"2208-2223,omitempty"`
-			T2224_2239 int `json:"2224-2239,omitempty"`
-			T2240_2255 int `json:"2240-2255,omitempty"`
-			T2256_2271 int `json:"2256-2271,omitempty"`
-			T2272_2287 int `json:"2272-2287,omitempty"`
-			T2288_2303 int `json:"2288-2303,omitempty"`
-			T2304_2319 int `json:"2304-2319,omitempty"`
-			T2320_2335 int `json:"2320-2335,omitempty"`
-		} `json:"dns-tcp-responses-sizes-sent-ipv4"`
-		DnsUDPRequestsSizesReceivedIPv6 struct {
-			U0_15    int `json:"0-15,omitempty"`
-			U16_31   int `json:"16-31,omitempty"`
-			U32_47   int `json:"32-47,omitempty"`
-			U48_63   int `json:"48-63,omitempty"`
-			U64_79   int `json:"64-79,omitempty"`
-			U80_95   int `json:"80-95,omitempty"`
-			U96_111  int `json:"96-111,omitempty"`
-			U112_127 int `json:"112-127,omitempty"`
-			U128_143 int `json:"128-143,omitempty"`
-			U144_159 int `json:"144-159,omitempty"`
-		} `json:"dns-udp-requests-sizes-received-ipv6"`
-		DnsUDPResponsesSizesSentIPv6 struct {
-			U0_15      int `json:"0-15,omitempty"`
-			U16_31     int `json:"16-31,omitempty"`
-			U32_47     int `json:"32-47,omitempty"`
-			U48_63     int `json:"48-63,omitempty"`
-			U64_79     int `json:"64-79,omitempty"`
-			U80_95     int `json:"80-95,omitempty"`
-			U96_111    int `json:"96-111,omitempty"`
-			U112_127   int `json:"112-127,omitempty"`
-			U128_143   int `json:"128-143,omitempty"`
-			U144_159   int `json:"144-159,omitempty"`
-			U160_175   int `json:"160-175,omitempty"`
-			U176_191   int `json:"176-191,omitempty"`
-			U192_207   int `json:"192-207,omitempty"`
-			U208_223   int `json:"208-223,omitempty"`
-			U224_239   int `json:"224-239,omitempty"`
-			U240_255   int `json:"240-255,omitempty"`
-			U256_271   int `json:"256-271,omitempty"`
-			U272_287   int `json:"272-287,omitempty"`
-			U288_303   int `json:"288-303,omitempty"`
-			U304_319   int `json:"304-319,omitempty"`
-			U320_335   int `json:"320-335,omitempty"`
-			U336_351   int `json:"336-351,omitempty"`
-			U352_367   int `json:"352-367,omitempty"`
-			U368_383   int `json:"368-383,omitempty"`
-			U384_399   int `json:"384-399,omitempty"`
-			U400_415   int `json:"400-415,omitempty"`
-			U416_431   int `json:"416-431,omitempty"`
-			U432_447   int `json:"432-447,omitempty"`
-			U448_463   int `json:"448-463,omitempty"`
-			U464_479   int `json:"464-479,omitempty"`
-			U480_495   int `json:"480-495,omitempty"`
-			U496_511   int `json:"496-511,omitempty"`
-			U512_527   int `json:"512-527,omitempty"`
-			U528_543   int `json:"528-543,omitempty"`
-			U544_559   int `json:"544-559,omitempty"`
-			U560_575   int `json:"560-575,omitempty"`
-			U576_591   int `json:"576-591,omitempty"`
-			U592_607   int `json:"592-607,omitempty"`
-			U608_623   int `json:"608-623,omitempty"`
-			U624_639   int `json:"624-639,omitempty"`
-			U640_655   int `json:"640-655,omitempty"`
-			U656_671   int `json:"656-671,omitempty"`
-			U672_687   int `json:"672-687,omitempty"`
-			U688_703   int `json:"688-703,omitempty"`
-			U704_719   int `json:"704-719,omitempty"`
-			U720_735   int `json:"720-735,omitempty"`
-			U736_751   int `json:"736-751,omitempty"`
-			U752_767   int `json:"752-767,omitempty"`
-			U768_783   int `json:"768-783,omitempty"`
-			U784_799   int `json:"784-799,omitempty"`
-			U800_815   int `json:"800-815,omitempty"`
-			U816_831   int `json:"816-831,omitempty"`
-			U832_847   int `json:"832-847,omitempty"`
-			U848_863   int `json:"848-863,omitempty"`
-			U864_879   int `json:"864-879,omitempty"`
-			U880_895   int `json:"880-895,omitempty"`
-			U896_911   int `json:"896-911,omitempty"`
-			U912_927   int `json:"912-927,omitempty"`
-			U928_943   int `json:"928-943,omitempty"`
-			U944_959   int `json:"944-959,omitempty"`
-			U960_975   int `json:"960-975,omitempty"`
-			U976_991   int `json:"976-991,omitempty"`
-			U992_1007  int `json:"992-1007,omitempty"`
-			U1008_1023 int `json:"1008-1023,omitempty"`
-			U1024_1039 int `json:"1024-1039,omitempty"`
-			U1040_1055 int `json:"1040-1055,omitempty"`
-			U1056_1071 int `json:"1056-1071,omitempty"`
-			U1072_1087 int `json:"1072-1087,omitempty"`
-			U1088_1103 int `json:"1088-1103,omitempty"`
-			U1104_1119 int `json:"1104-1119,omitempty"`
-			U1120_1135 int `json:"1120-1135,omitempty"`
-			U1136_1151 int `json:"1136-1151,omitempty"`
-			U1152_1167 int `json:"1152-1167,omitempty"`
-			U1168_1183 int `json:"1168-1183,omitempty"`
-			U1184_1199 int `json:"1184-1199,omitempty"`
-			U1200_1215 int `json:"1200-1215,omitempty"`
-			U1216_1231 int `json:"1216-1231,omitempty"`
-		} `json:"dns-udp-responses-sizes-sent-ipv6"`
-		DnsTCPRequestsSizesReceivedIPv6 struct {
-			T0_15  int `json:"0-15,omitempty"`
-			T16_31 int `json:"16-31,omitempty"`
-			T32_47 int `json:"32-47,omitempty"`
-			T48_63 int `json:"48-63,omitempty"`
-			T64_79 int `json:"64-79,omitempty"`
-			T80_95 int `json:"80-95,omitempty"`
-		} `json:"dns-tcp-requests-sizes-received-ipv6"`
-		DnsTCPResponsesSizesSentIPv6 struct {
-			T0_15      int `json:"0-15,omitempty"`
-			T16_31     int `json:"16-31,omitempty"`
-			T32_47     int `json:"32-47,omitempty"`
-			T48_63     int `json:"48-63,omitempty"`
-			T64_79     int `json:"64-79,omitempty"`
-			T80_95     int `json:"80-95,omitempty"`
-			T96_111    int `json:"96-111,omitempty"`
-			T112_127   int `json:"112-127,omitempty"`
-			T128_143   int `json:"128-143,omitempty"`
-			T144_159   int `json:"144-159,omitempty"`
-			T160_175   int `json:"160-175,omitempty"`
-			T176_191   int `json:"176-191,omitempty"`
-			T192_207   int `json:"192-207,omitempty"`
-			T208_223   int `json:"208-223,omitempty"`
-			T224_239   int `json:"224-239,omitempty"`
-			T240_255   int `json:"240-255,omitempty"`
-			T256_271   int `json:"256-271,omitempty"`
-			T272_287   int `json:"272-287,omitempty"`
-			T288_303   int `json:"288-303,omitempty"`
-			T304_319   int `json:"304-319,omitempty"`
-			T320_335   int `json:"320-335,omitempty"`
-			T336_351   int `json:"336-351,omitempty"`
-			T352_367   int `json:"352-367,omitempty"`
-			T368_383   int `json:"368-383,omitempty"`
-			T384_399   int `json:"384-399,omitempty"`
-			T400_415   int `json:"400-415,omitempty"`
-			T416_431   int `json:"416-431,omitempty"`
-			T432_447   int `json:"432-447,omitempty"`
-			T448_463   int `json:"448-463,omitempty"`
-			T464_479   int `json:"464-479,omitempty"`
-			T480_495   int `json:"480-495,omitempty"`
-			T496_511   int `json:"496-511,omitempty"`
-			T512_527   int `json:"512-527,omitempty"`
-			T528_543   int `json:"528-543,omitempty"`
-			T544_559   int `json:"544-559,omitempty"`
-			T560_575   int `json:"560-575,omitempty"`
-			T576_591   int `json:"576-591,omitempty"`
-			T592_607   int `json:"592-607,omitempty"`
-			T608_623   int `json:"608-623,omitempty"`
-			T624_639   int `json:"624-639,omitempty"`
-			T640_655   int `json:"640-655,omitempty"`
-			T656_671   int `json:"656-671,omitempty"`
-			T672_687   int `json:"672-687,omitempty"`
-			T688_703   int `json:"688-703,omitempty"`
-			T704_719   int `json:"704-719,omitempty"`
-			T720_735   int `json:"720-735,omitempty"`
-			T736_751   int `json:"736-751,omitempty"`
-			T752_767   int `json:"752-767,omitempty"`
-			T768_783   int `json:"768-783,omitempty"`
-			T784_799   int `json:"784-799,omitempty"`
-			T800_815   int `json:"800-815,omitempty"`
-			T816_831   int `json:"816-831,omitempty"`
-			T832_847   int `json:"832-847,omitempty"`
-			T848_863   int `json:"848-863,omitempty"`
-			T864_879   int `json:"864-879,omitempty"`
-			T880_895   int `json:"880-895,omitempty"`
-			T896_911   int `json:"896-911,omitempty"`
-			T912_927   int `json:"912-927,omitempty"`
-			T928_943   int `json:"928-943,omitempty"`
-			T944_959   int `json:"944-959,omitempty"`
-			T960_975   int `json:"960-975,omitempty"`
-			T976_991   int `json:"976-991,omitempty"`
-			T992_1007  int `json:"992-1007,omitempty"`
-			T1008_1023 int `json:"1008-1023,omitempty"`
-			T1024_1039 int `json:"1024-1039,omitempty"`
-			T1040_1055 int `json:"1040-1055,omitempty"`
-			T1056_1071 int `json:"1056-1071,omitempty"`
-			T1072_1087 int `json:"1072-1087,omitempty"`
-			T1088_1103 int `json:"1088-1103,omitempty"`
-			T1104_1119 int `json:"1104-1119,omitempty"`
-			T1120_1135 int `json:"1120-1135,omitempty"`
-			T1136_1151 int `json:"1136-1151,omitempty"`
-			T1152_1167 int `json:"1152-1167,omitempty"`
-			T1168_1183 int `json:"1168-1183,omitempty"`
-			T1184_1199 int `json:"1184-1199,omitempty"`
-			T1200_1215 int `json:"1200-1215,omitempty"`
-			T1216_1231 int `json:"1216-1231,omitempty"`
-			T1232_1247 int `json:"1232-1247,omitempty"`
-			T1248_1263 int `json:"1248-1263,omitempty"`
-			T1264_1279 int `json:"1264-1279,omitempty"`
-			T1280_1295 int `json:"1280-1295,omitempty"`
-			T1296_1311 int `json:"1296-1311,omitempty"`
-			T1312_1327 int `json:"1312-1327,omitempty"`
-			T1328_1343 int `json:"1328-1343,omitempty"`
-			T1344_1359 int `json:"1344-1359,omitempty"`
-			T1360_1375 int `json:"1360-1375,omitempty"`
-			T1376_1391 int `json:"1376-1391,omitempty"`
-			T1392_1407 int `json:"1392-1407,omitempty"`
-			T1408_1423 int `json:"1408-1423,omitempty"`
-			T1424_1439 int `json:"1424-1439,omitempty"`
-			T1440_1455 int `json:"1440-1455,omitempty"`
-			T1456_1471 int `json:"1456-1471,omitempty"`
-			T1472_1487 int `json:"1472-1487,omitempty"`
-			T1488_1503 int `json:"1488-1503,omitempty"`
-			T1504_1519 int `json:"1504-1519,omitempty"`
-			T1520_1535 int `json:"1520-1535,omitempty"`
-			T1536_1551 int `json:"1536-1551,omitempty"`
-			T1552_1567 int `json:"1552-1567,omitempty"`
-			T1568_1583 int `json:"1568-1583,omitempty"`
-			T1584_1599 int `json:"1584-1599,omitempty"`
-			T1600_1615 int `json:"1600-1615,omitempty"`
-			T1616_1631 int `json:"1616-1631,omitempty"`
-			T1632_1647 int `json:"1632-1647,omitempty"`
-			T1648_1663 int `json:"1648-1663,omitempty"`
-			T1664_1679 int `json:"1664-1679,omitempty"`
-			T1680_1695 int `json:"1680-1695,omitempty"`
-			T1696_1711 int `json:"1696-1711,omitempty"`
-			T1712_1727 int `json:"1712-1727,omitempty"`
-			T1728_1743 int `json:"1728-1743,omitempty"`
-			T1744_1759 int `json:"1744-1759,omitempty"`
-			T1760_1775 int `json:"1760-1775,omitempty"`
-			T1776_1791 int `json:"1776-1791,omitempty"`
-			T1792_1807 int `json:"1792-1807,omitempty"`
-			T1808_1823 int `json:"1808-1823,omitempty"`
-			T1824_1839 int `json:"1824-1839,omitempty"`
-			T1840_1855 int `json:"1840-1855,omitempty"`
-			T1856_1871 int `json:"1856-1871,omitempty"`
-			T1872_1887 int `json:"1872-1887,omitempty"`
-			T1888_1903 int `json:"1888-1903,omitempty"`
-			T1904_1919 int `json:"1904-1919,omitempty"`
-			T1920_1935 int `json:"1920-1935,omitempty"`
-			T1936_1951 int `json:"1936-1951,omitempty"`
-			T1952_1967 int `json:"1952-1967,omitempty"`
-			T1968_1983 int `json:"1968-1983,omitempty"`
-			T1984_1999 int `json:"1984-1999,omitempty"`
-			T2000_2015 int `json:"2000-2015,omitempty"`
-			T2016_2031 int `json:"2016-2031,omitempty"`
-			T2032_2047 int `json:"2032-2047,omitempty"`
-			T2048_2063 int `json:"2048-2063,omitempty"`
-			T2064_2079 int `json:"2064-2079,omitempty"`
-			T2080_2095 int `json:"2080-2095,omitempty"`
-			T2096_2111 int `json:"2096-2111,omitempty"`
-			T2112_2127 int `json:"2112-2127,omitempty"`
-			T2128_2143 int `json:"2128-2143,omitempty"`
-			T2144_2159 int `json:"2144-2159,omitempty"`
-			T2160_2175 int `json:"2160-2175,omitempty"`
-			T2176_2191 int `json:"2176-2191,omitempty"`
-			T2192_2207 int `json:"2192-2207,omitempty"`
-			T2208_2223 int `json:"2208-2223,omitempty"`
-			T2224_2239 int `json:"2224-2239,omitempty"`
-			T2240_2255 int `json:"2240-2255,omitempty"`
-			T2256_2271 int `json:"2256-2271,omitempty"`
-			T2272_2287 int `json:"2272-2287,omitempty"`
-			T2288_2303 int `json:"2288-2303,omitempty"`
-			T2304_2319 int `json:"2304-2319,omitempty"`
-			T2320_2335 int `json:"2320-2335,omitempty"`
-		} `json:"dns-tcp-responses-sizes-sent-ipv6"`
-	} `json:"traffic"`
+	Traffic Traffic `json:"traffic"`
 }
 
 type QTypes struct {
@@ -1622,6 +1128,113 @@ func (d *DnsSec) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type Traffic struct {
+	TrafficTypes []struct {
+		Protocol string
+		Type     string
+		IPVer    string
+		Name     string
+		Value    int64
+	}
+}
+
+func (t *Traffic) toMetrics(metric_time time.Time) []*Metric {
+	metrics := make([]*Metric, 0)
+	for _, traffic_type := range t.TrafficTypes {
+		protocol_tag := &MetricTag{"protocol", traffic_type.Protocol}
+		type_tag := &MetricTag{"type", traffic_type.Type}
+		ipver_tag := &MetricTag{"ipver", traffic_type.IPVer}
+		metrics = append(metrics, &Metric{
+			Name:      traffic_type.Name,
+			Value:     traffic_type.Value,
+			Timestamp: metric_time,
+			Tags:      []*MetricTag{ipver_tag, protocol_tag, type_tag},
+		})
+	}
+	return metrics
+}
+
+func (t *Traffic) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" || string(data) == `""` {
+		return nil
+	}
+
+	traffic := string(data)
+
+	// String the beginning and ending curly braces
+	traffic = traffic[1 : len(traffic)-1]
+
+	// Strip beginning and ending whitespace
+	traffic = strings.TrimSpace(traffic)
+
+	traffic_attribute, _ := regexp.Compile("dns-(?P<protocol>udp|tcp|tcp6|udp6)-(?P<type>(?:requests|responses)-sizes)-(?:received|sent)-(?P<ipver>ipv4|ipv6)")
+	for {
+		if len(traffic) == 0 {
+			break
+		}
+
+		// Parse the attribute name from the string
+		attribute_name := traffic[:strings.Index(traffic, ":")+1]
+		traffic = strings.Replace(traffic, attribute_name, "", 1)
+
+		// Parse the attribute name into pieces
+		attribute_name = strings.Replace(attribute_name, `"`, "", -1)
+		attribute_name = strings.Replace(attribute_name, ":", "", -1)
+		attribute_pieces := traffic_attribute.FindStringSubmatch(attribute_name)
+		protocol := attribute_pieces[1]
+		traffic_type := attribute_pieces[2]
+		traffic_type = strings.Replace(traffic_type, "s-sizes", "-size", -1)
+		ipver := attribute_pieces[3]
+
+		// Parse the attribute value from the string
+		attribute_value := traffic[:strings.Index(traffic, "}")+1]
+
+		// Strip the attribute value from the string
+		traffic = strings.Replace(traffic, attribute_value, "", 1)
+
+		// Strip the beginning and ending curly braces
+		attribute_value = attribute_value[1 : len(attribute_value)-1]
+
+		// Strip beginning and ending whitespace
+		attribute_value = strings.TrimSpace(attribute_value)
+
+		// Parse the attribute value into pieces
+		attribute_value_pieces := strings.Split(attribute_value, ",")
+		for _, piece := range attribute_value_pieces {
+			// Split the key value pair
+			kv := strings.Split(piece, ":")
+			k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
+			v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+
+			traffic_type := struct {
+				Protocol string
+				Type     string
+				IPVer    string
+				Name     string
+				Value    int64
+			}{
+				Protocol: protocol,
+				Type:     traffic_type,
+				IPVer:    ipver,
+				Name:     k,
+				Value:    v,
+			}
+
+			t.TrafficTypes = append(t.TrafficTypes, traffic_type)
+		}
+
+		// Strip whitespace from the string
+		traffic = strings.TrimSpace(traffic)
+
+		// Strip the comma from the string
+		if strings.Index(traffic, ",") == 0 {
+			traffic = traffic[1:]
+		}
+	}
+
+	return nil
+}
+
 func ReadJsonStats(statsData []byte) error {
 	// Read the JSON statistics
 	var jsonStats bindJsonStats
@@ -2173,6 +1786,17 @@ func ReadJsonStats(statsData []byte) error {
 			if context_metric.Value != 0 {
 				return_metrics = append(return_metrics, context_metric)
 			}
+		}
+	}
+	// traffic_tag := &MetricTag{"server", "traffic"}
+	traffic_metrics := jsonStats.Traffic.toMetrics(jsonStats.CurrentTime)
+	for _, traffic_metric := range traffic_metrics {
+		traffic_metric_tags := make([]*MetricTag, 0, len(traffic_metric.Tags))
+		// traffic_metric_tags = append(traffic_metric_tags, traffic_tag)
+		traffic_metric_tags = append(traffic_metric_tags, traffic_metric.Tags...)
+		traffic_metric.Tags = traffic_metric_tags
+		if traffic_metric.Value != 0 {
+			return_metrics = append(return_metrics, traffic_metric)
 		}
 	}
 

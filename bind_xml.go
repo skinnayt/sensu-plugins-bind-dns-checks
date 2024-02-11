@@ -312,35 +312,36 @@ func ReadXmlStats(statsData []byte) error {
 	socketMetrics := make([]*Metric, 0, 10)
 	socket_mgr_tag := &MetricTag{"server", "socketmgr"}
 	for _, socket := range xmlStats.Socketmgr.Sockets.Socket {
-		socket_metric := &Metric{
-			Name:      socket.ID,
-			Value:     int64(socket.References),
-			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{socket_mgr_tag},
-		}
 		if socket.Name != nil {
-			socket_metric.Name = *socket.Name
+			socket_metric := &Metric{
+				Name:      *socket.Name,
+				Value:     int64(socket.References),
+				Timestamp: xmlStats.Server.CurrentTime,
+				Tags:      []*MetricTag{socket_mgr_tag},
+			}
+			if socket.LocalAddress != nil {
+				socket_metric.Tags = append(
+					socket_metric.Tags,
+					&MetricTag{
+						"local-address",
+						strings.Replace(*socket.LocalAddress, ".", "_", -1),
+					},
+				)
+			}
+			if socket.PeerAddress != "" {
+				socket_metric.Tags = append(
+					socket_metric.Tags,
+					&MetricTag{
+						"peer-address",
+						strings.Replace(socket.PeerAddress, ".", "_", -1),
+					},
+				)
+			}
+			socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"type", socket.Type})
+			if socket_metric.Value != 0 {
+				socketMetrics = append(socketMetrics, socket_metric)
+			}
 		}
-		if socket.LocalAddress != nil {
-			socket_metric.Tags = append(
-				socket_metric.Tags,
-				&MetricTag{
-					"local-address",
-					strings.Replace(*socket.LocalAddress, ".", "_", -1),
-				},
-			)
-		}
-		if socket.PeerAddress != "" {
-			socket_metric.Tags = append(
-				socket_metric.Tags,
-				&MetricTag{
-					"peer-address",
-					strings.Replace(socket.PeerAddress, ".", "_", -1),
-				},
-			)
-			socketMetrics = append(socketMetrics, socket_metric)
-		}
-		socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"type", socket.Type})
 	}
 	returnMetrics = append(returnMetrics, socketMetrics...)
 
@@ -356,7 +357,6 @@ func ReadXmlStats(statsData []byte) error {
 				Tags:      []*MetricTag{taskmgr_tag},
 			}
 			task_metric.Tags = append(task_metric.Tags, &MetricTag{"task_id", task.ID})
-			// task_metric.Tags = append(task_metric.Tags, &MetricTag{"state", task.State})
 			if task_metric.Value != 0 {
 				taskMetrics = append(taskMetrics, task_metric)
 			}

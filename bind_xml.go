@@ -72,22 +72,8 @@ type bindXmlStats struct {
 		} `xml:"thread-model"`
 	} `xml:"taskmgr"`
 	Traffic struct {
-		Ipv4 struct {
-			Tcp struct {
-				Counters []*XmlCounters `xml:"counters"`
-			} `xml:"tcp"`
-			Udp struct {
-				Counters []*XmlCounters `xml:"counters"`
-			} `xml:"udp"`
-		} `xml:"ipv4"`
-		Ipv6 struct {
-			Tcp struct {
-				Counters []*XmlCounters `xml:"counters"`
-			} `xml:"tcp"`
-			Udp struct {
-				Counters []*XmlCounters `xml:"counters"`
-			} `xml:"udp"`
-		} `xml:"ipv6"`
+		Ipv4 *XmlIp `xml:"ipv4"`
+		Ipv6 *XmlIp `xml:"ipv6"`
 	} `xml:"traffic"`
 	Views struct {
 		View []struct {
@@ -124,6 +110,15 @@ type XmlCounter struct {
 type XmlCounters struct {
 	Type    string        `xml:"type,attr"`
 	Counter []*XmlCounter `xml:"counter"`
+}
+
+type XmlIp struct {
+	Tcp struct {
+		Counters []*XmlCounters `xml:"counters"`
+	} `xml:"tcp"`
+	Udp struct {
+		Counters []*XmlCounters `xml:"counters"`
+	} `xml:"udp"`
 }
 
 func ReadXmlStats(statsData []byte) error {

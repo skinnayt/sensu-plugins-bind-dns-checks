@@ -121,21 +121,6 @@ func (m *Metric) Graphite(tag_prefix string) string {
 	)
 }
 
-func (m *Metric) Prometheus() string {
-	var tags []string
-	for _, tag := range m.Tags {
-		tags = append(tags, fmt.Sprintf("%s=\"%s\"", tag[0], tag[1]))
-	}
-
-	return fmt.Sprintf(
-		"%s{%s} %d %d",
-		strings.Replace(strings.Replace(m.Name, " ", "_", -1), "-", "_", -1),
-		strings.Join(tags, ","),
-		m.Value,
-		m.Timestamp.UnixMilli(),
-	)
-}
-
 func main() {
 	check := sensu.NewGoCheck(&plugin.PluginConfig, options, checkArgs, executeCheck, false)
 	check.Execute()
@@ -352,9 +337,139 @@ func OutputMetricsGraphite() {
 	}
 }
 
-func OutputMetricsPrometheus() {
-	// Output metrics in Prometheus format
-	for _, metric := range plugin.returnMetrics {
-		fmt.Println(metric.Prometheus())
+type PromLabel struct {
+	Name  string
+	Value string
+}
+
+type PrometheusMetric struct {
+	Name      string
+	Label     []*PromLabel
+	Value     int64
+	Timestamp time.Time
+}
+
+type PrometheusMetricGroup struct {
+	Name    string
+	Metrics []*PrometheusMetric
+}
+
+type PrometheusMetricGroups struct {
+	Groups []*PrometheusMetricGroup
+}
+
+func (pmg *PrometheusMetricGroups) findOrAdd(pm *PrometheusMetric) int {
+	var idx int = -1
+	for i, group := range pmg.Groups {
+		if group.Name == pm.Name {
+			idx = i
+			break
+		}
 	}
+	if idx == -1 {
+		group := &PrometheusMetricGroup{Name: pm.Name}
+		pmg.Groups = append(pmg.Groups, group)
+		idx = len(pmg.Groups) - 1
+	}
+	return idx
+}
+
+func promLabelsToString(labels []*PromLabel) string {
+	var label_strings []string
+	for _, label := range labels {
+		label_strings = append(label_strings, fmt.Sprintf("%s=\"%s\"", label.Name, label.Value))
+	}
+	return strings.Join(label_strings, ",")
+}
+
+func OutputMetricsPrometheus() {
+	// Gather all the metrics for sorting
+	prom_metric_groups := &PrometheusMetricGroups{Groups: make([]*PrometheusMetricGroup, 0)}
+
+	for _, metric := range plugin.returnMetrics {
+		var parsed_metrics int = 0
+		prom_metrics := make([]*MetricTag, 0)
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "qtype"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "rcode"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "nsstat"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "zonestat"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "resstats"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "cache"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "adbstat"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "gluecache"})
+		prom_metrics = append(prom_metrics, &MetricTag{"type", "cachestats"})
+		prom_metrics = append(prom_metrics, &MetricTag{"server", "qtype"})
+		prom_metrics = append(prom_metrics, &MetricTag{"server", "opcodes"})
+
+		for _, prom_metric := range prom_metrics {
+			if prom_metric_groups.makePromMetric(metric, prom_metric) {
+				parsed_metrics++
+			}
+		}
+
+		if contains(metric.Tags, "type", "response-size") || contains(metric.Tags, "type", "request-size") {
+			prom_labels := make([]*PromLabel, 0)
+			prom_labels = append(prom_labels, &PromLabel{Name: "packet_size", Value: metric.Name})
+			prom_name := make([]string, 0)
+			for _, tag := range metric.Tags {
+				tag_value := strings.Replace(tag[1], "-", "_", -1)
+				prom_name = append(prom_name, tag_value)
+			}
+			prom_metric := &PrometheusMetric{
+				Name:      strings.Join(prom_name, "_"),
+				Label:     prom_labels,
+				Value:     metric.Value,
+				Timestamp: metric.Timestamp,
+			}
+			pmg_idx := prom_metric_groups.findOrAdd(prom_metric)
+			prom_metric_groups.Groups[pmg_idx].Metrics = append(prom_metric_groups.Groups[pmg_idx].Metrics, prom_metric)
+		}
+	}
+
+	// Output metrics in Prometheus format
+	for _, group := range prom_metric_groups.Groups {
+		fmt.Println("# HELP " + group.Name + "_total Bind DNS statistics")
+		fmt.Println("# TYPE " + group.Name + "_total counter")
+
+		for _, metric := range group.Metrics {
+			fmt.Printf("%s_total{%s} %d %d\n", group.Name, promLabelsToString(metric.Label), metric.Value, metric.Timestamp.UnixMilli())
+		}
+	}
+}
+
+func (pmg *PrometheusMetricGroups) makePromMetric(metric *Metric, metric_tag *MetricTag) bool {
+	if !contains(metric.Tags, metric_tag[0], metric_tag[1]) {
+		return false
+	}
+	prom_labels := make([]*PromLabel, 0)
+	prom_labels = append(prom_labels, &PromLabel{Name: metric_tag[0], Value: metric.Name})
+	prom_name := make([]string, 0)
+	for _, tag := range metric.Tags {
+		tag_value := strings.Replace(tag[1], "-", "_", -1)
+		if tag[0] == "view" {
+			if tag_value[0:1] == "_" {
+				tag_value = tag_value[1:]
+			}
+		}
+		prom_name = append(prom_name, tag_value)
+	}
+	prom_metric := &PrometheusMetric{
+		Name:      strings.Join(prom_name, "_"),
+		Label:     prom_labels,
+		Value:     metric.Value,
+		Timestamp: metric.Timestamp,
+	}
+
+	pmg_idx := pmg.findOrAdd(prom_metric)
+	pmg.Groups[pmg_idx].Metrics = append(pmg.Groups[pmg_idx].Metrics, prom_metric)
+	return true
+}
+
+func contains(tags []*MetricTag, tag_name, tag_value string) bool {
+	for _, tag := range tags {
+		if tag[0] == tag_name && tag[1] == tag_value {
+			return true
+		}
+	}
+	return false
 }

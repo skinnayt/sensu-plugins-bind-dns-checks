@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -1480,15 +1481,17 @@ func (c *Context) toMetric(metric_time time.Time) []*Metric {
 }
 
 type ZoneView struct {
-	Name    string    `json:"name"`
-	Class   string    `json:"class"`
-	Serial  int       `json:"serial"`
-	Type    string    `json:"type"`
-	Loaded  time.Time `json:"loaded"`
-	Expires time.Time `json:"expires,omitempty"`
-	Refresh time.Time `json:"refresh,omitempty"`
-	RCodes  RCode     `json:"rcodes,omitempty"`
-	QTypes  QTypes    `json:"qtypes"`
+	Name          string    `json:"name"`
+	Class         string    `json:"class"`
+	Serial        int       `json:"serial"`
+	Type          string    `json:"type"`
+	Loaded        time.Time `json:"loaded"`
+	Expires       time.Time `json:"expires,omitempty"`
+	Refresh       time.Time `json:"refresh,omitempty"`
+	RCodes        RCode     `json:"rcodes,omitempty"`
+	QTypes        QTypes    `json:"qtypes"`
+	DnsSecSign    DnsSec    `json:"dnssec-sign,omitempty"`
+	DnsSecRefresh DnsSec    `json:"dnssec-refresh,omitempty"`
 }
 
 func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
@@ -1527,7 +1530,96 @@ func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
 		}
 	}
 
+	dnssecsign_tag := &MetricTag{"type", "dnssec-sign"}
+	dnssecsign_metrics := z.DnsSecSign.toMetrics(metric_time)
+	for _, dnssecsign_metric := range dnssecsign_metrics {
+		if dnssecsign_metric.Value != 0 {
+			dnssecsign_metric_tags := make([]*MetricTag, 0, len(dnssecsign_metric.Tags)+4)
+			dnssecsign_metric_tags = append(dnssecsign_metric_tags, zone_name_tag)
+			dnssecsign_metric_tags = append(dnssecsign_metric_tags, zone_class_tag)
+			dnssecsign_metric_tags = append(dnssecsign_metric_tags, zone_type_tag)
+			dnssecsign_metric_tags = append(dnssecsign_metric_tags, dnssecsign_tag)
+			dnssecsign_metric_tags = append(dnssecsign_metric_tags, dnssecsign_metric.Tags...)
+			dnssecsign_metric.Tags = dnssecsign_metric_tags
+			metrics = append(metrics, dnssecsign_metric)
+		}
+	}
+	dnsssecrefresh_tag := &MetricTag{"type", "dnssec-refresh"}
+	dnsssecrefresh_metrics := z.DnsSecRefresh.toMetrics(metric_time)
+	for _, dnsssecrefresh_metric := range dnsssecrefresh_metrics {
+		if dnsssecrefresh_metric.Value != 0 {
+			dnsssecrefresh_metric_tags := make([]*MetricTag, 0, len(dnsssecrefresh_metric.Tags)+4)
+			dnsssecrefresh_metric_tags = append(dnsssecrefresh_metric_tags, zone_name_tag)
+			dnsssecrefresh_metric_tags = append(dnsssecrefresh_metric_tags, zone_class_tag)
+			dnsssecrefresh_metric_tags = append(dnsssecrefresh_metric_tags, zone_type_tag)
+			dnsssecrefresh_metric_tags = append(dnsssecrefresh_metric_tags, dnsssecrefresh_tag)
+			dnsssecrefresh_metric_tags = append(dnsssecrefresh_metric_tags, dnsssecrefresh_metric.Tags...)
+			dnsssecrefresh_metric.Tags = dnsssecrefresh_metric_tags
+			metrics = append(metrics, dnsssecrefresh_metric)
+		}
+	}
+
 	return metrics
+}
+
+type DnsSec struct {
+	DnsSecTypes []struct {
+		Name  string
+		Value int64
+	}
+}
+
+func (d *DnsSec) toMetrics(metric_time time.Time) []*Metric {
+	metrics := make([]*Metric, 0)
+	for _, dnssec_type := range d.DnsSecTypes {
+		metrics = append(metrics, &Metric{
+			Name:      dnssec_type.Name,
+			Value:     dnssec_type.Value,
+			Timestamp: metric_time,
+			Tags:      []*MetricTag{},
+		})
+	}
+	return metrics
+}
+
+func (d *DnsSec) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" || string(data) == `""` {
+		return nil
+	}
+
+	dnssec := string(data)
+
+	// String the beginning and ending curly braces
+	dnssec = dnssec[1 : len(dnssec)-1]
+
+	// Strip beginning and ending whitespace
+	dnssec = strings.TrimSpace(dnssec)
+
+	// Split the string into key value pairs
+	d.DnsSecTypes = make([]struct {
+		Name  string
+		Value int64
+	}, 0)
+	dnssec_pairs := strings.Split(dnssec, ",")
+	for _, pair := range dnssec_pairs {
+		// Split the key value pair
+		kv := strings.Split(pair, ":")
+		if len(kv) != 2 {
+			continue
+		}
+		k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
+		v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+
+		d.DnsSecTypes = append(d.DnsSecTypes, struct {
+			Name  string
+			Value int64
+		}{
+			Name:  k,
+			Value: v,
+		})
+	}
+
+	return nil
 }
 
 func ReadJsonStats(statsData []byte) error {

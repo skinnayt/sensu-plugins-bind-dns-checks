@@ -293,12 +293,12 @@ func readStatisticsChannel() error {
 	// Read the statistics from the channel
 	if plugin.StatisticsFormat == "xml" {
 		// Read the XML statistics
-		if err := readXmlStats(statsData); err != nil {
+		if err := ReadXmlStats(statsData); err != nil {
 			return err
 		}
 	} else if plugin.StatisticsFormat == "json" {
 		// Read the JSON statistics
-		if err := readJsonStats(statsData); err != nil {
+		if err := ReadJsonStats(statsData); err != nil {
 			return err
 		}
 	}
@@ -318,6 +318,11 @@ func OutputMetricsGraphite() {
 			}
 		}
 
-		fmt.Printf("%s.%s %d %d\n", outTags, metric.Name, metric.Value, metric.Timestamp.Unix())
+		fmt.Printf("%s.%s %d %d\n",
+			outTags,
+			strings.Replace(metric.Name, " ", "_", -1),
+			metric.Value,
+			metric.Timestamp.Unix(),
+		)
 	}
 }

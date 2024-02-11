@@ -56,33 +56,7 @@ type bindJsonStats struct {
 		R22        int `json:"22"`
 		Badcookie  int `json:"BADCOOKIE"`
 	} `json:"rcodes"`
-	QTypes struct {
-		Others     int `json:"Others"`
-		A          int `json:"A"`
-		Ns         int `json:"NS"`
-		Cname      int `json:"CNAME"`
-		Soa        int `json:"SOA"`
-		Ptr        int `json:"PTR"`
-		Mx         int `json:"MX"`
-		Txt        int `json:"TXT"`
-		Afsdb      int `json:"AFSDB"`
-		Aaaa       int `json:"AAAA"`
-		Srv        int `json:"SRV"`
-		Naptr      int `json:"NAPTR"`
-		Dname      int `json:"DNAME"`
-		Ds         int `json:"DS"`
-		Rrsig      int `json:"RRSIG"`
-		Dnskey     int `json:"DNSKEY"`
-		Nsec3param int `json:"NSEC3PARAM"`
-		Tlsa       int `json:"TLSA"`
-		Cds        int `json:"CDS"`
-		Cdnskey    int `json:"CDNSKEY"`
-		Zonemd     int `json:"ZONEMD"`
-		Svcb       int `json:"SVCB"`
-		Https      int `json:"HTTPS"`
-		Spf        int `json:"SPF"`
-		Any        int `json:"ANY"`
-	} `json:"qtypes"`
+	QTypes  QTypes `json:"qtypes"`
 	NSStats struct {
 		Requestv4        int `json:"Requestv4"`
 		Requestv6        int `json:"Requestv6"`
@@ -116,204 +90,8 @@ type bindJsonStats struct {
 		XfrSuccess int `json:"XfrSuccess"`
 	} `json:"zonestats"`
 	Views struct {
-		Default struct {
-			Zones    []*ZoneView `json:"zones"`
-			Resolver struct {
-				Stats struct {
-					Queryv6         int `json:"Queryv6"`
-					Responsev6      int `json:"Responsev6"`
-					NXDOMAIN        int `json:"NXDOMAIN"`
-					Truncated       int `json:"Truncated"`
-					Retry           int `json:"Retry"`
-					ValAttempt      int `json:"ValAttempt"`
-					ValOk           int `json:"ValOk"`
-					ValNegOk        int `json:"ValNegOk"`
-					QryRTT100       int `json:"QryRTT100"`
-					QryRTT500       int `json:"QryRTT500"`
-					BucketSize      int `json:"BucketSize"`
-					ClientCookieOut int `json:"ClientCookieOut"`
-					ServerCookieOut int `json:"ServerCookieOut"`
-					CookieIn        int `json:"CookieIn"`
-					CookieClientOk  int `json:"CookieClientOk"`
-					Priming         int `json:"Priming"`
-				} `json:"stats"`
-				QTypes struct {
-					Others     int `json:"Others"`
-					A          int `json:"A"`
-					Ns         int `json:"NS"`
-					Cname      int `json:"CNAME"`
-					Soa        int `json:"SOA"`
-					Ptr        int `json:"PTR"`
-					Mx         int `json:"MX"`
-					Txt        int `json:"TXT"`
-					Afsdb      int `json:"AFSDB"`
-					Aaaa       int `json:"AAAA"`
-					Srv        int `json:"SRV"`
-					Naptr      int `json:"NAPTR"`
-					Dname      int `json:"DNAME"`
-					Ds         int `json:"DS"`
-					Rrsig      int `json:"RRSIG"`
-					Dnskey     int `json:"DNSKEY"`
-					Nsec3param int `json:"NSEC3PARAM"`
-					Tlsa       int `json:"TLSA"`
-					Cds        int `json:"CDS"`
-					Cdnskey    int `json:"CDNSKEY"`
-					Zonemd     int `json:"ZONEMD"`
-					Svcb       int `json:"SVCB"`
-					Https      int `json:"HTTPS"`
-					Spf        int `json:"SPF"`
-					Any        int `json:"ANY"`
-				} `json:"qtypes"`
-				Cache struct {
-					Others     int `json:"Others"`
-					A          int `json:"A"`
-					Ns         int `json:"NS"`
-					Cname      int `json:"CNAME"`
-					Soa        int `json:"SOA"`
-					Ptr        int `json:"PTR"`
-					Mx         int `json:"MX"`
-					Txt        int `json:"TXT"`
-					Afsdb      int `json:"AFSDB"`
-					Aaaa       int `json:"AAAA"`
-					Srv        int `json:"SRV"`
-					Naptr      int `json:"NAPTR"`
-					Dname      int `json:"DNAME"`
-					Ds         int `json:"DS"`
-					Rrsig      int `json:"RRSIG"`
-					Dnskey     int `json:"DNSKEY"`
-					Nsec3param int `json:"NSEC3PARAM"`
-					Tlsa       int `json:"TLSA"`
-					Cds        int `json:"CDS"`
-					Cdnskey    int `json:"CDNSKEY"`
-					Zonemd     int `json:"ZONEMD"`
-					Svcb       int `json:"SVCB"`
-					Https      int `json:"HTTPS"`
-					Spf        int `json:"SPF"`
-					Any        int `json:"ANY"`
-				} `json:"cache"`
-				CacheStats struct {
-					CacheHits    int `json:"CacheHits"`
-					CacheMisses  int `json:"CacheMisses"`
-					QueryHits    int `json:"QueryHits"`
-					QueryMisses  int `json:"QueryMisses"`
-					DeleteLRU    int `json:"DeleteLRU"`
-					DeleteTTL    int `json:"DeleteTTL"`
-					CacheNodes   int `json:"CacheNodes"`
-					CacheBuckets int `json:"CacheBuckets"`
-					TreeMemTotal int `json:"TreeMemTotal"`
-					TreeMemInUse int `json:"TreeMemInUse"`
-					TreeMemMax   int `json:"TreeMemMax"`
-					HeapMemTotal int `json:"HeapMemTotal"`
-					HeapMemInUse int `json:"HeapMemInUse"`
-					HeapMemMax   int `json:"HeapMemMax"`
-				} `json:"cache-stats"`
-				Adb struct {
-					Nentries   int `json:"nentries"`
-					Entriescnt int `json:"entriescnt"`
-					Nnames     int `json:"nnames"`
-					Namescnt   int `json:"namescnt"`
-				} `json:"adb"`
-			} `json:"resolver"`
-		} `json:"default"`
-		Bind struct {
-			Zones    []*ZoneView `json:"zones"`
-			Resolver struct {
-				Stats struct {
-					Queryv6         int `json:"Queryv6"`
-					Responsev6      int `json:"Responsev6"`
-					NXDOMAIN        int `json:"NXDOMAIN"`
-					Truncated       int `json:"Truncated"`
-					Retry           int `json:"Retry"`
-					ValAttempt      int `json:"ValAttempt"`
-					ValOk           int `json:"ValOk"`
-					ValNegOk        int `json:"ValNegOk"`
-					QryRTT100       int `json:"QryRTT100"`
-					QryRTT500       int `json:"QryRTT500"`
-					BucketSize      int `json:"BucketSize"`
-					ClientCookieOut int `json:"ClientCookieOut"`
-					ServerCookieOut int `json:"ServerCookieOut"`
-					CookieIn        int `json:"CookieIn"`
-					CookieClientOk  int `json:"CookieClientOk"`
-					Priming         int `json:"Priming"`
-				} `json:"stats"`
-				QTypes struct {
-					Others     int `json:"Others"`
-					A          int `json:"A"`
-					Ns         int `json:"NS"`
-					Cname      int `json:"CNAME"`
-					Soa        int `json:"SOA"`
-					Ptr        int `json:"PTR"`
-					Mx         int `json:"MX"`
-					Txt        int `json:"TXT"`
-					Afsdb      int `json:"AFSDB"`
-					Aaaa       int `json:"AAAA"`
-					Srv        int `json:"SRV"`
-					Naptr      int `json:"NAPTR"`
-					Dname      int `json:"DNAME"`
-					Ds         int `json:"DS"`
-					Rrsig      int `json:"RRSIG"`
-					Dnskey     int `json:"DNSKEY"`
-					Nsec3param int `json:"NSEC3PARAM"`
-					Tlsa       int `json:"TLSA"`
-					Cds        int `json:"CDS"`
-					Cdnskey    int `json:"CDNSKEY"`
-					Zonemd     int `json:"ZONEMD"`
-					Svcb       int `json:"SVCB"`
-					Https      int `json:"HTTPS"`
-					Spf        int `json:"SPF"`
-					Any        int `json:"ANY"`
-				} `json:"qtypes"`
-				Cache struct {
-					Others     int `json:"Others"`
-					A          int `json:"A"`
-					Ns         int `json:"NS"`
-					Cname      int `json:"CNAME"`
-					Soa        int `json:"SOA"`
-					Ptr        int `json:"PTR"`
-					Mx         int `json:"MX"`
-					Txt        int `json:"TXT"`
-					Afsdb      int `json:"AFSDB"`
-					Aaaa       int `json:"AAAA"`
-					Srv        int `json:"SRV"`
-					Naptr      int `json:"NAPTR"`
-					Dname      int `json:"DNAME"`
-					Ds         int `json:"DS"`
-					Rrsig      int `json:"RRSIG"`
-					Dnskey     int `json:"DNSKEY"`
-					Nsec3param int `json:"NSEC3PARAM"`
-					Tlsa       int `json:"TLSA"`
-					Cds        int `json:"CDS"`
-					Cdnskey    int `json:"CDNSKEY"`
-					Zonemd     int `json:"ZONEMD"`
-					Svcb       int `json:"SVCB"`
-					Https      int `json:"HTTPS"`
-					Spf        int `json:"SPF"`
-					Any        int `json:"ANY"`
-				} `json:"cache"`
-				CacheStats struct {
-					CacheHits    int `json:"CacheHits"`
-					CacheMisses  int `json:"CacheMisses"`
-					QueryHits    int `json:"QueryHits"`
-					QueryMisses  int `json:"QueryMisses"`
-					DeleteLRU    int `json:"DeleteLRU"`
-					DeleteTTL    int `json:"DeleteTTL"`
-					CacheNodes   int `json:"CacheNodes"`
-					CacheBuckets int `json:"CacheBuckets"`
-					TreeMemTotal int `json:"TreeMemTotal"`
-					TreeMemInUse int `json:"TreeMemInUse"`
-					TreeMemMax   int `json:"TreeMemMax"`
-					HeapMemTotal int `json:"HeapMemTotal"`
-					HeapMemInUse int `json:"HeapMemInUse"`
-					HeapMemMax   int `json:"HeapMemMax"`
-				} `json:"cache-stats"`
-				Adb struct {
-					Nentries   int `json:"nentries"`
-					Entriescnt int `json:"entriescnt"`
-					Nnames     int `json:"nnames"`
-					Namescnt   int `json:"namescnt"`
-				} `json:"adb"`
-			} `json:"resolver"`
-		} `json:"bind"`
+		Default BindView `json:"default"`
+		Bind    BindView `json:"bind"`
 	} `json:"views"`
 	SocketStats struct {
 		UDP4Open    int `json:"UDP4Open"`
@@ -850,6 +628,82 @@ type bindJsonStats struct {
 			T2320_2335 int `json:"2320-2335,omitempty"`
 		} `json:"dns-tcp-responses-sizes-sent-ipv6"`
 	} `json:"traffic"`
+}
+
+type QTypes struct {
+	Others     int `json:"Others"`
+	A          int `json:"A"`
+	Ns         int `json:"NS"`
+	Cname      int `json:"CNAME"`
+	Soa        int `json:"SOA"`
+	Ptr        int `json:"PTR"`
+	Mx         int `json:"MX"`
+	Txt        int `json:"TXT"`
+	Afsdb      int `json:"AFSDB"`
+	Aaaa       int `json:"AAAA"`
+	Srv        int `json:"SRV"`
+	Naptr      int `json:"NAPTR"`
+	Dname      int `json:"DNAME"`
+	Ds         int `json:"DS"`
+	Rrsig      int `json:"RRSIG"`
+	Dnskey     int `json:"DNSKEY"`
+	Nsec3param int `json:"NSEC3PARAM"`
+	Tlsa       int `json:"TLSA"`
+	Cds        int `json:"CDS"`
+	Cdnskey    int `json:"CDNSKEY"`
+	Zonemd     int `json:"ZONEMD"`
+	Svcb       int `json:"SVCB"`
+	Https      int `json:"HTTPS"`
+	Spf        int `json:"SPF"`
+	Any        int `json:"ANY"`
+}
+
+type BindView struct {
+	Zones    []*ZoneView `json:"zones"`
+	Resolver struct {
+		Stats struct {
+			Queryv6         int `json:"Queryv6"`
+			Responsev6      int `json:"Responsev6"`
+			NXDOMAIN        int `json:"NXDOMAIN"`
+			Truncated       int `json:"Truncated"`
+			Retry           int `json:"Retry"`
+			ValAttempt      int `json:"ValAttempt"`
+			ValOk           int `json:"ValOk"`
+			ValNegOk        int `json:"ValNegOk"`
+			QryRTT100       int `json:"QryRTT100"`
+			QryRTT500       int `json:"QryRTT500"`
+			BucketSize      int `json:"BucketSize"`
+			ClientCookieOut int `json:"ClientCookieOut"`
+			ServerCookieOut int `json:"ServerCookieOut"`
+			CookieIn        int `json:"CookieIn"`
+			CookieClientOk  int `json:"CookieClientOk"`
+			Priming         int `json:"Priming"`
+		} `json:"stats"`
+		QTypes     QTypes `json:"qtypes"`
+		Cache      QTypes `json:"cache"`
+		CacheStats struct {
+			CacheHits    int `json:"CacheHits"`
+			CacheMisses  int `json:"CacheMisses"`
+			QueryHits    int `json:"QueryHits"`
+			QueryMisses  int `json:"QueryMisses"`
+			DeleteLRU    int `json:"DeleteLRU"`
+			DeleteTTL    int `json:"DeleteTTL"`
+			CacheNodes   int `json:"CacheNodes"`
+			CacheBuckets int `json:"CacheBuckets"`
+			TreeMemTotal int `json:"TreeMemTotal"`
+			TreeMemInUse int `json:"TreeMemInUse"`
+			TreeMemMax   int `json:"TreeMemMax"`
+			HeapMemTotal int `json:"HeapMemTotal"`
+			HeapMemInUse int `json:"HeapMemInUse"`
+			HeapMemMax   int `json:"HeapMemMax"`
+		} `json:"cache-stats"`
+		Adb struct {
+			Nentries   int `json:"nentries"`
+			Entriescnt int `json:"entriescnt"`
+			Nnames     int `json:"nnames"`
+			Namescnt   int `json:"namescnt"`
+		} `json:"adb"`
+	} `json:"resolver"`
 }
 
 type SocketMgrSocket struct {

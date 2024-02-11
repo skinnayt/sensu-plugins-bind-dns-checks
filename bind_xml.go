@@ -152,6 +152,9 @@ func (xi *XmlIp) toMetrics(metric_time time.Time) []*Metric {
 	for _, counter := range xi.Tcp.Counters {
 		tcp_metric := counter.toMetrics(metric_time)
 		for _, metric := range tcp_metric {
+			if _, err := strconv.Atoi(metric.Name[0:1]); err == nil {
+				metric.Name = "range" + metric.Name
+			}
 			metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
 			metric_tag := &MetricTag{"protocol", "tcp"}
 			metric_tags = append(metric_tags, metric_tag)
@@ -164,6 +167,9 @@ func (xi *XmlIp) toMetrics(metric_time time.Time) []*Metric {
 	for _, counter := range xi.Udp.Counters {
 		udp_metric := counter.toMetrics(metric_time)
 		for _, metric := range udp_metric {
+			if _, err := strconv.Atoi(metric.Name[0:1]); err == nil {
+				metric.Name = "range" + metric.Name
+			}
 			metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
 			metric_tag := &MetricTag{"protocol", "udp"}
 			metric_tags = append(metric_tags, metric_tag)

@@ -129,7 +129,7 @@ func (m *Metric) Prometheus() string {
 
 	return fmt.Sprintf(
 		"%s{%s} %d %d",
-		strings.Replace(m.Name, " ", "_", -1),
+		strings.Replace(strings.Replace(m.Name, " ", "_", -1), "-", "_", -1),
 		strings.Join(tags, ","),
 		m.Value,
 		m.Timestamp.UnixMilli(),

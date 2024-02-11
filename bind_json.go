@@ -1145,7 +1145,7 @@ func (t *Traffic) toMetrics(metric_time time.Time) []*Metric {
 		type_tag := &MetricTag{"type", traffic_type.Type}
 		ipver_tag := &MetricTag{"ipver", traffic_type.IPVer}
 		metrics = append(metrics, &Metric{
-			Name:      traffic_type.Name,
+			Name:      "range" + traffic_type.Name,
 			Value:     traffic_type.Value,
 			Timestamp: metric_time,
 			Tags:      []*MetricTag{ipver_tag, protocol_tag, type_tag},
@@ -1200,27 +1200,32 @@ func (t *Traffic) UnmarshalJSON(data []byte) error {
 
 		// Parse the attribute value into pieces
 		attribute_value_pieces := strings.Split(attribute_value, ",")
-		for _, piece := range attribute_value_pieces {
-			// Split the key value pair
-			kv := strings.Split(piece, ":")
-			k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
-			v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
 
-			traffic_type := struct {
-				Protocol string
-				Type     string
-				IPVer    string
-				Name     string
-				Value    int64
-			}{
-				Protocol: protocol,
-				Type:     traffic_type,
-				IPVer:    ipver,
-				Name:     k,
-				Value:    v,
+		if len(attribute_value_pieces) > 0 {
+			for _, piece := range attribute_value_pieces {
+				// Split the key value pair
+				kv := strings.Split(piece, ":")
+				if len(kv) == 2 {
+					k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
+					v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+
+					traffic_type := struct {
+						Protocol string
+						Type     string
+						IPVer    string
+						Name     string
+						Value    int64
+					}{
+						Protocol: protocol,
+						Type:     traffic_type,
+						IPVer:    ipver,
+						Name:     k,
+						Value:    v,
+					}
+
+					t.TrafficTypes = append(t.TrafficTypes, traffic_type)
+				}
 			}
-
-			t.TrafficTypes = append(t.TrafficTypes, traffic_type)
 		}
 
 		// Strip whitespace from the string

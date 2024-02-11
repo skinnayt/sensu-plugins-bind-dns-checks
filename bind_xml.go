@@ -261,7 +261,11 @@ func ReadXmlStats(statsData []byte) error {
 			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 	}
-	returnMetrics = append(returnMetrics, contextMetrics...)
+	for _, context_metric := range contextMetrics {
+		if context_metric.Value != 0 {
+			returnMetrics = append(returnMetrics, context_metric)
+		}
+	}
 
 	// Process the memory statistics
 	memory_tag := &MetricTag{"server", "memory"}

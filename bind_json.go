@@ -2071,18 +2071,18 @@ func ReadJsonStats(statsData []byte) error {
 	})
 
 	context_tag := &MetricTag{"server", "context"}
-	context_metrics := make([]*Metric, 0)
 	for _, context := range jsonStats.Memory.Contexts {
-		context_metric := context.toMetric(jsonStats.CurrentTime)
-		for _, context_metric := range context_metric {
+		context_metrics := context.toMetric(jsonStats.CurrentTime)
+		for _, context_metric := range context_metrics {
 			context_metric_tags := make([]*MetricTag, 0, len(context_metric.Tags)+1)
 			context_metric_tags = append(context_metric_tags, context_tag)
 			context_metric_tags = append(context_metric_tags, context_metric.Tags...)
 			context_metric.Tags = context_metric_tags
+			if context_metric.Value != 0 {
+				return_metrics = append(return_metrics, context_metric)
+			}
 		}
-		context_metrics = append(context_metrics, context_metric...)
 	}
-	return_metrics = append(return_metrics, context_metrics...)
 
 	plugin.returnMetrics = return_metrics
 	return nil

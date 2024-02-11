@@ -791,30 +791,41 @@ func (q *QTypes) toMetrics(metric_time time.Time) []*Metric {
 }
 
 type RCode struct {
-	Noerror    int `json:"NOERROR,omitempty"`
-	Formerr    int `json:"FORMERR,omitempty"`
-	Servfail   int `json:"SERVFAIL,omitempty"`
-	Nxdomain   int `json:"NXDOMAIN,omitempty"`
-	Notimp     int `json:"NOTIMP,omitempty"`
-	Refused    int `json:"REFUSED,omitempty"`
-	Yxdomain   int `json:"YXDOMAIN,omitempty"`
-	Yxrrset    int `json:"YXRRSET,omitempty"`
-	Nxrrset    int `json:"NXRRSET,omitempty"`
-	Notauth    int `json:"NOTAUTH,omitempty"`
-	Notzone    int `json:"NOTZONE,omitempty"`
-	Reserved11 int `json:"RESERVED11,omitempty"`
-	Reserved12 int `json:"RESERVED12,omitempty"`
-	Reserved13 int `json:"RESERVED13,omitempty"`
-	Reserved14 int `json:"RESERVED14,omitempty"`
-	Reserved15 int `json:"RESERVED15,omitempty"`
-	Badvers    int `json:"BADVERS,omitempty"`
-	R17        int `json:"17,omitempty"`
-	R18        int `json:"18,omitempty"`
-	R19        int `json:"19,omitempty"`
-	R20        int `json:"20,omitempty"`
-	R21        int `json:"21,omitempty"`
-	R22        int `json:"22,omitempty"`
-	Badcookie  int `json:"BADCOOKIE,omitempty"`
+	R17         int `json:"17,omitempty"`
+	R18         int `json:"18,omitempty"`
+	R19         int `json:"19,omitempty"`
+	R20         int `json:"20,omitempty"`
+	R21         int `json:"21,omitempty"`
+	R22         int `json:"22,omitempty"`
+	AuthQryRej  int `json:"AuthQryRej,omitempty"`
+	Badcookie   int `json:"BADCOOKIE,omitempty"`
+	Badvers     int `json:"BADVERS,omitempty"`
+	Formerr     int `json:"FORMERR,omitempty"`
+	Noerror     int `json:"NOERROR,omitempty"`
+	Notauth     int `json:"NOTAUTH,omitempty"`
+	Notimp      int `json:"NOTIMP,omitempty"`
+	Notzone     int `json:"NOTZONE,omitempty"`
+	Nxdomain    int `json:"NXDOMAIN,omitempty"`
+	Nxrrset     int `json:"NXRRSET,omitempty"`
+	QryAuthAns  int `json:"QryAuthAns,omitempty"`
+	QryNXDOMAIN int `json:"QryNXDOMAIN,omitempty"`
+	QryNxrrset  int `json:"QryNxrrset,omitempty"`
+	QrySuccess  int `json:"QrySuccess,omitempty"`
+	QryTCP      int `json:"QryTCP,omitempty"`
+	QryUDP      int `json:"QryUDP,omitempty"`
+	Refused     int `json:"REFUSED,omitempty"`
+	Reserved11  int `json:"RESERVED11,omitempty"`
+	Reserved12  int `json:"RESERVED12,omitempty"`
+	Reserved13  int `json:"RESERVED13,omitempty"`
+	Reserved14  int `json:"RESERVED14,omitempty"`
+	Reserved15  int `json:"RESERVED15,omitempty"`
+	RecQryRej   int `json:"RecQryRej,omitempty"`
+	Servfail    int `json:"SERVFAIL,omitempty"`
+	UpdateDone  int `json:"UpdateDone,omitempty"`
+	XfrRej      int `json:"XfrRej,omitempty"`
+	XfrReqDone  int `json:"XfrReqDone,omitempty"`
+	Yxdomain    int `json:"YXDOMAIN,omitempty"`
+	Yxrrset     int `json:"YXRRSET,omitempty"`
 }
 
 func (r *RCode) toMetrics(metric_time time.Time) []*Metric {
@@ -1022,7 +1033,7 @@ func (bv *BindView) toMetrics(metric_time time.Time) []*Metric {
 		zone_metrics = append(zone_metrics, zone.toMetrics(metric_time)...)
 	}
 	metrics = append(metrics, zone_metrics...)
-	stats_tag := &MetricTag{"resolver", "stats"}
+	stats_tag := &MetricTag{"type", "resstats"}
 	resolver_stats_metrics := make([]*Metric, 0)
 	resolver_stats_metrics = append(resolver_stats_metrics, &Metric{
 		Name:      "Queryv6",
@@ -1122,7 +1133,7 @@ func (bv *BindView) toMetrics(metric_time time.Time) []*Metric {
 	})
 	metrics = append(metrics, resolver_stats_metrics...)
 
-	qtypes_tag := &MetricTag{"resolver", "qtypes"}
+	qtypes_tag := &MetricTag{"type", "resqtype"}
 	resolver_qtypes_metrics := bv.Resolver.QTypes.toMetrics(metric_time)
 	for _, metric := range resolver_qtypes_metrics {
 		metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
@@ -1131,7 +1142,7 @@ func (bv *BindView) toMetrics(metric_time time.Time) []*Metric {
 		metric.Tags = metric_tags
 	}
 	metrics = append(metrics, resolver_qtypes_metrics...)
-	cache_tag := &MetricTag{"resolver", "cache"}
+	cache_tag := &MetricTag{"type", "cache"}
 	resolver_cache_metrics := bv.Resolver.Cache.toMetrics(metric_time)
 	for _, metric := range resolver_cache_metrics {
 		metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
@@ -1141,7 +1152,7 @@ func (bv *BindView) toMetrics(metric_time time.Time) []*Metric {
 	}
 	metrics = append(metrics, resolver_cache_metrics...)
 
-	cachestats_tag := &MetricTag{"resolver", "cachestats"}
+	cachestats_tag := &MetricTag{"type", "cachestats"}
 	resolver_cache_stats_metrics := make([]*Metric, 0)
 	resolver_cache_stats_metrics = append(resolver_cache_stats_metrics, &Metric{
 		Name:      "CacheHits",
@@ -1228,7 +1239,7 @@ func (bv *BindView) toMetrics(metric_time time.Time) []*Metric {
 		Tags:      []*MetricTag{cachestats_tag},
 	})
 	metrics = append(metrics, resolver_cache_stats_metrics...)
-	adb_tag := &MetricTag{"resolver", "adb"}
+	adb_tag := &MetricTag{"type", "adbstat"}
 	resolver_adb_metrics := make([]*Metric, 0)
 	resolver_adb_metrics = append(resolver_adb_metrics, &Metric{
 		Name:      "nentries",
@@ -1309,14 +1320,12 @@ type TaskMgrTask struct {
 
 func (t *TaskMgrTask) toMetric(metric_time time.Time) *Metric {
 	task_metric := &Metric{
-		Name:      t.Id,
+		Name:      t.Name,
 		Value:     int64(t.Events),
 		Timestamp: metric_time,
 		Tags:      []*MetricTag{},
 	}
-	if t.Name != "" {
-		task_metric.Tags = append(task_metric.Tags, &MetricTag{"name", t.Name})
-	}
+	task_metric.Tags = append(task_metric.Tags, &MetricTag{"task_id", t.Id})
 	return task_metric
 }
 
@@ -1337,7 +1346,7 @@ type Context struct {
 
 func (c *Context) toMetric(metric_time time.Time) []*Metric {
 	context_name_tag := &MetricTag{"context", c.Name}
-	context_id_tag := &MetricTag{"context-id", c.Id}
+	context_id_tag := &MetricTag{"context_id", c.Id}
 
 	context_metrics := make([]*Metric, 0)
 	context_metrics = append(context_metrics, &Metric{
@@ -1353,7 +1362,7 @@ func (c *Context) toMetric(metric_time time.Time) []*Metric {
 		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
-		Name:      "Inuse",
+		Name:      "InUse",
 		Value:     int64(c.Inuse),
 		Timestamp: metric_time,
 		Tags:      []*MetricTag{context_name_tag, context_id_tag},
@@ -1422,26 +1431,35 @@ func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
 	zone_class_tag := &MetricTag{"class", z.Class}
 	zone_type_tag := &MetricTag{"type", z.Type}
 
+	rcode_tag := &MetricTag{"type", "rcode"}
 	rcode_metrics := z.RCodes.toMetrics(metric_time)
 	for _, rcode_metric := range rcode_metrics {
-		rcode_metric_tags := make([]*MetricTag, 0, len(rcode_metric.Tags)+3)
-		rcode_metric_tags = append(rcode_metric_tags, zone_name_tag)
-		rcode_metric_tags = append(rcode_metric_tags, zone_class_tag)
-		rcode_metric_tags = append(rcode_metric_tags, zone_type_tag)
-		rcode_metric_tags = append(rcode_metric_tags, rcode_metric.Tags...)
-		rcode_metric.Tags = rcode_metric_tags
+		if rcode_metric.Value != 0 {
+			rcode_metric_tags := make([]*MetricTag, 0, len(rcode_metric.Tags)+3)
+			rcode_metric_tags = append(rcode_metric_tags, zone_name_tag)
+			rcode_metric_tags = append(rcode_metric_tags, zone_class_tag)
+			rcode_metric_tags = append(rcode_metric_tags, zone_type_tag)
+			rcode_metric_tags = append(rcode_metric_tags, rcode_tag)
+			rcode_metric_tags = append(rcode_metric_tags, rcode_metric.Tags...)
+			rcode_metric.Tags = rcode_metric_tags
+			metrics = append(metrics, rcode_metric)
+		}
 	}
-	metrics = append(metrics, rcode_metrics...)
 
+	qtype_tag := &MetricTag{"type", "qtype"}
 	qtype_metrics := z.QTypes.toMetrics(metric_time)
 	for _, qtype_metric := range qtype_metrics {
-		qtype_metric_tags := make([]*MetricTag, 0, len(qtype_metric.Tags)+3)
-		qtype_metric_tags = append(qtype_metric_tags, zone_name_tag)
-		qtype_metric_tags = append(qtype_metric_tags, zone_class_tag)
-		qtype_metric_tags = append(qtype_metric_tags, zone_type_tag)
-		qtype_metric.Tags = qtype_metric_tags
+		if qtype_metric.Value != 0 {
+			qtype_metric_tags := make([]*MetricTag, 0, len(qtype_metric.Tags)+3)
+			qtype_metric_tags = append(qtype_metric_tags, zone_name_tag)
+			qtype_metric_tags = append(qtype_metric_tags, zone_class_tag)
+			qtype_metric_tags = append(qtype_metric_tags, zone_type_tag)
+			qtype_metric_tags = append(qtype_metric_tags, qtype_tag)
+			qtype_metric_tags = append(qtype_metric_tags, qtype_metric.Tags...)
+			qtype_metric.Tags = qtype_metric_tags
+			metrics = append(metrics, qtype_metric)
+		}
 	}
-	metrics = append(metrics, qtype_metrics...)
 
 	return metrics
 }
@@ -1458,431 +1476,463 @@ func ReadJsonStats(statsData []byte) error {
 
 	return_metrics := make([]*Metric, 0)
 
+	opscodes_metrics := make([]*Metric, 0)
 	opcodes_tag := &MetricTag{"server", "opcodes"}
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Query",
 		Value:     int64(jsonStats.OpCodes.Query),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "IQuery",
 		Value:     int64(jsonStats.OpCodes.IQuery),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Status",
 		Value:     int64(jsonStats.OpCodes.Status),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Notify",
 		Value:     int64(jsonStats.OpCodes.Notify),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Update",
 		Value:     int64(jsonStats.OpCodes.Update),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved6",
 		Value:     int64(jsonStats.OpCodes.Reserved6),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved7",
 		Value:     int64(jsonStats.OpCodes.Reserved7),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved8",
 		Value:     int64(jsonStats.OpCodes.Reserved8),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved9",
 		Value:     int64(jsonStats.OpCodes.Reserved9),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved10",
 		Value:     int64(jsonStats.OpCodes.Reserved10),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved11",
 		Value:     int64(jsonStats.OpCodes.Reserved11),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved12",
 		Value:     int64(jsonStats.OpCodes.Reserved12),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved13",
 		Value:     int64(jsonStats.OpCodes.Reserved13),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved14",
 		Value:     int64(jsonStats.OpCodes.Reserved14),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	opscodes_metrics = append(opscodes_metrics, &Metric{
 		Name:      "Reserved15",
 		Value:     int64(jsonStats.OpCodes.Reserved15),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{opcodes_tag},
 	})
+	for _, opcode_metric := range opscodes_metrics {
+		if opcode_metric.Value != 0 {
+			return_metrics = append(return_metrics, opcode_metric)
+		}
+	}
 
 	rcodes_tag := &MetricTag{"server", "rcodes"}
 	json_rcodes := jsonStats.RCodes.toMetrics(jsonStats.CurrentTime)
 	for _, rcode_metric := range json_rcodes {
-		metric_tags := make([]*MetricTag, 0, len(rcode_metric.Tags)+1)
-		metric_tags = append(metric_tags, rcodes_tag)
-		metric_tags = append(metric_tags, rcode_metric.Tags...)
-		rcode_metric.Tags = metric_tags
+		if rcode_metric.Value != 0 {
+			metric_tags := make([]*MetricTag, 0, len(rcode_metric.Tags)+1)
+			metric_tags = append(metric_tags, rcodes_tag)
+			metric_tags = append(metric_tags, rcode_metric.Tags...)
+			rcode_metric.Tags = metric_tags
+			return_metrics = append(return_metrics, rcode_metric)
+		}
 	}
-	return_metrics = append(return_metrics, json_rcodes...)
 
 	qtypes_tag := &MetricTag{"server", "qtypes"}
 	json_qtypes := jsonStats.QTypes.toMetrics(jsonStats.CurrentTime)
 	for _, qtype_metric := range json_qtypes {
-		metric_tags := make([]*MetricTag, 0, len(qtype_metric.Tags)+1)
-		metric_tags = append(metric_tags, qtypes_tag)
-		metric_tags = append(metric_tags, qtype_metric.Tags...)
-		qtype_metric.Tags = metric_tags
+		if qtype_metric.Value != 0 {
+			metric_tags := make([]*MetricTag, 0, len(qtype_metric.Tags)+1)
+			metric_tags = append(metric_tags, qtypes_tag)
+			metric_tags = append(metric_tags, qtype_metric.Tags...)
+			qtype_metric.Tags = metric_tags
+			return_metrics = append(return_metrics, qtype_metric)
+		}
 	}
-	return_metrics = append(return_metrics, json_qtypes...)
 
 	nsstat_tag := &MetricTag{"server", "nsstat"}
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics := make([]*Metric, 0)
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "AuthQryRej",
 		Value:     int64(jsonStats.NSStats.AuthQryRej),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "CookieIn",
 		Value:     int64(jsonStats.NSStats.CookieIn),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "CookieMatch",
 		Value:     int64(jsonStats.NSStats.CookieMatch),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "CookieNew",
 		Value:     int64(jsonStats.NSStats.CookieNew),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "ECSOpt",
 		Value:     int64(jsonStats.NSStats.ECSOpt),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryAuthAns",
 		Value:     int64(jsonStats.NSStats.QryAuthAns),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryFailure",
 		Value:     int64(jsonStats.NSStats.QryFailure),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryNXDOMAIN",
 		Value:     int64(jsonStats.NSStats.QryNXDOMAIN),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryNoauthAns",
 		Value:     int64(jsonStats.NSStats.QryNoauthAns),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryNxrrset",
 		Value:     int64(jsonStats.NSStats.QryNxrrset),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryReferral",
 		Value:     int64(jsonStats.NSStats.QryReferral),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QrySuccess",
 		Value:     int64(jsonStats.NSStats.QrySuccess),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryTCP",
 		Value:     int64(jsonStats.NSStats.QryTCP),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "QryUDP",
 		Value:     int64(jsonStats.NSStats.QryUDP),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "RecQryRej",
 		Value:     int64(jsonStats.NSStats.RecQryRej),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "ReqEdns0",
 		Value:     int64(jsonStats.NSStats.ReqEdns0),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "ReqTCP",
 		Value:     int64(jsonStats.NSStats.ReqTCP),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "Requestv4",
 		Value:     int64(jsonStats.NSStats.Requestv4),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "Requestv6",
 		Value:     int64(jsonStats.NSStats.Requestv6),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "RespEDNS0",
 		Value:     int64(jsonStats.NSStats.RespEDNS0),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "Response",
 		Value:     int64(jsonStats.NSStats.Response),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "TCPConnHighWater",
 		Value:     int64(jsonStats.NSStats.TCPConnHighWater),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	nsstat_metrics = append(nsstat_metrics, &Metric{
 		Name:      "TruncatedResp",
 		Value:     int64(jsonStats.NSStats.TruncatedResp),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{nsstat_tag},
 	})
+	for _, nsstat_metric := range nsstat_metrics {
+		if nsstat_metric.Value != 0 {
+			return_metrics = append(return_metrics, nsstat_metric)
+		}
+	}
 
 	zone_tag := &MetricTag{"server", "zonestats"}
-	return_metrics = append(return_metrics, &Metric{
+	zonestats_metrics := make([]*Metric, 0)
+	zonestats_metrics = append(zonestats_metrics, &Metric{
 		Name:      "AXFRReqv4",
 		Value:     int64(jsonStats.ZoneStats.AXFRReqv4),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{zone_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	zonestats_metrics = append(zonestats_metrics, &Metric{
 		Name:      "IXFRReqv4",
 		Value:     int64(jsonStats.ZoneStats.IXFRReqv4),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{zone_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	zonestats_metrics = append(zonestats_metrics, &Metric{
 		Name:      "NotifyInv4",
 		Value:     int64(jsonStats.ZoneStats.NotifyInv4),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{zone_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	zonestats_metrics = append(zonestats_metrics, &Metric{
 		Name:      "SOAOutv4",
 		Value:     int64(jsonStats.ZoneStats.SOAOutv4),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{zone_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	zonestats_metrics = append(zonestats_metrics, &Metric{
 		Name:      "XfrSuccess",
 		Value:     int64(jsonStats.ZoneStats.XfrSuccess),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{zone_tag},
 	})
+	for _, zonestats_metric := range zonestats_metrics {
+		if zonestats_metric.Value != 0 {
+			return_metrics = append(return_metrics, zonestats_metric)
+		}
+	}
 
 	bind_view_bind_tag := &MetricTag{"view", "_bind"}
 	bind_view_bind_metrics := jsonStats.Views.Bind.toMetrics(jsonStats.CurrentTime)
 	for _, bind_view_bind_metric := range bind_view_bind_metrics {
-		view_metrics := make([]*MetricTag, 0, len(bind_view_bind_metric.Tags)+1)
-		view_metrics = append(view_metrics, bind_view_bind_tag)
-		view_metrics = append(view_metrics, bind_view_bind_metric.Tags...)
-		bind_view_bind_metric.Tags = view_metrics
+		if bind_view_bind_metric.Value != 0 {
+			view_metrics := make([]*MetricTag, 0, len(bind_view_bind_metric.Tags)+1)
+			view_metrics = append(view_metrics, bind_view_bind_tag)
+			view_metrics = append(view_metrics, bind_view_bind_metric.Tags...)
+			bind_view_bind_metric.Tags = view_metrics
+			return_metrics = append(return_metrics, bind_view_bind_metric)
+		}
 	}
-	return_metrics = append(return_metrics, bind_view_bind_metrics...)
 
 	bind_view_default_tag := &MetricTag{"view", "_default"}
 	bind_view_default_metrics := jsonStats.Views.Default.toMetrics(jsonStats.CurrentTime)
 	for _, bind_view_default_metric := range bind_view_default_metrics {
-		view_metrics := make([]*MetricTag, 0, len(bind_view_default_metric.Tags)+1)
-		view_metrics = append(view_metrics, bind_view_default_tag)
-		view_metrics = append(view_metrics, bind_view_default_metric.Tags...)
-		bind_view_default_metric.Tags = view_metrics
+		if bind_view_default_metric.Value != 0 {
+			view_metrics := make([]*MetricTag, 0, len(bind_view_default_metric.Tags)+1)
+			view_metrics = append(view_metrics, bind_view_default_tag)
+			view_metrics = append(view_metrics, bind_view_default_metric.Tags...)
+			bind_view_default_metric.Tags = view_metrics
+			return_metrics = append(return_metrics, bind_view_default_metric)
+		}
 	}
-	return_metrics = append(return_metrics, bind_view_default_metrics...)
 
 	sockstats_tag := &MetricTag{"server", "sockstats"}
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics := make([]*Metric, 0)
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "RawActive",
 		Value:     int64(jsonStats.SocketStats.RawActive),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "RawOpen",
 		Value:     int64(jsonStats.SocketStats.RawOpen),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4Accept",
 		Value:     int64(jsonStats.SocketStats.TCP4Accept),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4Active",
 		Value:     int64(jsonStats.SocketStats.TCP4Active),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4Close",
 		Value:     int64(jsonStats.SocketStats.TCP4Close),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4Conn",
 		Value:     int64(jsonStats.SocketStats.TCP4Conn),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4Open",
 		Value:     int64(jsonStats.SocketStats.TCP4Open),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP4RecvErr",
 		Value:     int64(jsonStats.SocketStats.TCP4RecvErr),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP6Accept",
 		Value:     int64(jsonStats.SocketStats.TCP6Accept),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP6Active",
 		Value:     int64(jsonStats.SocketStats.TCP6Active),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP6Close",
 		Value:     int64(jsonStats.SocketStats.TCP6Close),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP6Conn",
 		Value:     int64(jsonStats.SocketStats.TCP6Conn),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "TCP6Open",
 		Value:     int64(jsonStats.SocketStats.TCP6Open),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP4Active",
 		Value:     int64(jsonStats.SocketStats.UDP4Active),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP4Close",
 		Value:     int64(jsonStats.SocketStats.UDP4Close),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP4Open",
 		Value:     int64(jsonStats.SocketStats.UDP4Open),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP6Active",
 		Value:     int64(jsonStats.SocketStats.UDP6Active),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP6Close",
 		Value:     int64(jsonStats.SocketStats.UDP6Close),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP6Conn",
 		Value:     int64(jsonStats.SocketStats.UDP6Conn),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
-	return_metrics = append(return_metrics, &Metric{
+	sockstats_metrics = append(sockstats_metrics, &Metric{
 		Name:      "UDP6Open",
 		Value:     int64(jsonStats.SocketStats.UDP6Open),
 		Timestamp: jsonStats.CurrentTime,
 		Tags:      []*MetricTag{sockstats_tag},
 	})
+	for _, sockstats_metric := range sockstats_metrics {
+		if sockstats_metric.Value != 0 {
+			return_metrics = append(return_metrics, sockstats_metric)
+		}
+	}
 
 	socket_mgr_metrics := make([]*Metric, 0)
 	socket_mgr_tag := &MetricTag{"server", "socketmgr"}
@@ -1893,16 +1943,25 @@ func ReadJsonStats(statsData []byte) error {
 			socket_tags = append(socket_tags, socket_mgr_tag)
 			socket_tags = append(socket_tags, socket_metric.Tags...)
 			socket_metric.Tags = socket_tags
-			socket_mgr_metrics = append(socket_mgr_metrics, socket_metric)
+			if socket_metric.Value != 0 {
+				socket_mgr_metrics = append(socket_mgr_metrics, socket_metric)
+			}
 		}
 	}
 	return_metrics = append(return_metrics, socket_mgr_metrics...)
 
+	task_mgr_tag := &MetricTag{"server", "taskmgr"}
 	task_mgr_metrics := make([]*Metric, 0)
 	for _, task := range jsonStats.TaskMgr.Tasks {
 		task_metric := task.toMetric(jsonStats.CurrentTime)
 		if task_metric.Name != "" {
-			task_mgr_metrics = append(task_mgr_metrics, task_metric)
+			task_tags := make([]*MetricTag, 0, len(task_metric.Tags)+1)
+			task_tags = append(task_tags, task_mgr_tag)
+			task_tags = append(task_tags, task_metric.Tags...)
+			task_metric.Tags = task_tags
+			if task_metric.Value != 0 {
+				task_mgr_metrics = append(task_mgr_metrics, task_metric)
+			}
 		}
 	}
 	return_metrics = append(return_metrics, task_mgr_metrics...)

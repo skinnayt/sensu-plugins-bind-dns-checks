@@ -190,6 +190,7 @@ func ReadXmlStats(statsData []byte) error {
 	returnMetrics := make([]*Metric, 0, 100)
 
 	// Process the memory context statistics
+	context_tag := &MetricTag{"server", "context"}
 	contextMetrics := make([]*Metric, 0, 10)
 	for _, context := range xmlStats.Memory.Contexts.Context {
 		context_name_tag := &MetricTag{"context", context.Name}
@@ -198,70 +199,72 @@ func ReadXmlStats(statsData []byte) error {
 			Name:      "References",
 			Value:     int64(context.References),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		blocksize, err := strconv.ParseInt(context.Blocksize, 10, 64)
-		if err == nil {
-			contextMetrics = append(contextMetrics, &Metric{
-				Name:      "BlockSize",
-				Value:     int64(blocksize),
-				Timestamp: xmlStats.Server.CurrentTime,
-				Tags:      []*MetricTag{context_name_tag, context_id_tag},
-			})
+		if err != nil {
+			blocksize = 0
 		}
+		contextMetrics = append(contextMetrics, &Metric{
+			Name:      "Blocksize",
+			Value:     int64(blocksize),
+			Timestamp: xmlStats.Server.CurrentTime,
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
+		})
+
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Hiwater",
 			Value:     int64(context.Hiwater),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "InUse",
 			Value:     int64(context.Inuse),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Lowater",
 			Value:     int64(context.Lowater),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Malloced",
 			Value:     int64(context.Malloced),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Maxinuse",
 			Value:     int64(context.Maxinuse),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Maxmalloced",
 			Value:     int64(context.Maxmalloced),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Pools",
 			Value:     int64(context.Pools),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 		contextMetrics = append(contextMetrics, &Metric{
 			Name:      "Total",
 			Value:     int64(context.Total),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{context_name_tag, context_id_tag},
+			Tags:      []*MetricTag{context_tag, context_name_tag, context_id_tag},
 		})
 	}
 	returnMetrics = append(returnMetrics, contextMetrics...)
 
 	// Process the memory statistics
-	memory_tag := &MetricTag{"memory", "summary"}
+	memory_tag := &MetricTag{"server", "memory"}
 	memoryMetrics := make([]*Metric, 0, 10)
 	memoryMetrics = append(memoryMetrics, &Metric{
 		Name:      "BlockSize",
@@ -301,69 +304,61 @@ func ReadXmlStats(statsData []byte) error {
 	})
 	returnMetrics = append(returnMetrics, memoryMetrics...)
 
-	// Process the server statistics
-	serverMetrics := make([]*Metric, 0, 10)
-	serverMetrics = append(serverMetrics, &Metric{
-		Name:      "server.BootTime",
-		Value:     int64(xmlStats.Server.BootTime.Unix()),
-		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
-	})
-	serverMetrics = append(serverMetrics, &Metric{
-		Name:      "server.ConfigTime",
-		Value:     int64(xmlStats.Server.ConfigTime.Unix()),
-		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
-	})
-	returnMetrics = append(returnMetrics, serverMetrics...)
-
 	// Process the socketmgr statistics
 	socketMetrics := make([]*Metric, 0, 10)
+	socket_mgr_tag := &MetricTag{"server", "socketmgr"}
 	for _, socket := range xmlStats.Socketmgr.Sockets.Socket {
 		socket_metric := &Metric{
 			Name:      socket.ID,
 			Value:     int64(socket.References),
 			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{},
+			Tags:      []*MetricTag{socket_mgr_tag},
 		}
 		if socket.Name != nil {
 			socket_metric.Name = *socket.Name
 		}
 		if socket.LocalAddress != nil {
-			socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"local-address", *socket.LocalAddress})
+			socket_metric.Tags = append(
+				socket_metric.Tags,
+				&MetricTag{
+					"local-address",
+					strings.Replace(*socket.LocalAddress, ".", "_", -1),
+				},
+			)
 		}
-		socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"peer-address", socket.PeerAddress})
+		if socket.PeerAddress != "" {
+			socket_metric.Tags = append(
+				socket_metric.Tags,
+				&MetricTag{
+					"peer-address",
+					strings.Replace(socket.PeerAddress, ".", "_", -1),
+				},
+			)
+			socketMetrics = append(socketMetrics, socket_metric)
+		}
 		socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"type", socket.Type})
-		socketMetrics = append(socketMetrics, socket_metric)
 	}
 	returnMetrics = append(returnMetrics, socketMetrics...)
 
 	// Process the taskmgr statistics
 	taskMetrics := make([]*Metric, 0, 10)
+	taskmgr_tag := &MetricTag{"server", "taskmgr"}
 	for _, task := range xmlStats.Taskmgr.Tasks.Task {
-		task_metric := &Metric{
-			Name:      task.ID,
-			Value:     int64(task.Events),
-			Timestamp: xmlStats.Server.CurrentTime,
-			Tags:      []*MetricTag{},
-		}
 		if task.Name != nil {
-			task_metric.Tags = append(task_metric.Tags, &MetricTag{"name", *task.Name})
+			task_metric := &Metric{
+				Name:      *task.Name,
+				Value:     int64(task.Events),
+				Timestamp: xmlStats.Server.CurrentTime,
+				Tags:      []*MetricTag{taskmgr_tag},
+			}
+			task_metric.Tags = append(task_metric.Tags, &MetricTag{"task_id", task.ID})
+			// task_metric.Tags = append(task_metric.Tags, &MetricTag{"state", task.State})
+			if task_metric.Value != 0 {
+				taskMetrics = append(taskMetrics, task_metric)
+			}
 		}
-		task_metric.Tags = append(task_metric.Tags, &MetricTag{"state", task.State})
-		taskMetrics = append(taskMetrics, task_metric)
 	}
 	returnMetrics = append(returnMetrics, taskMetrics...)
-
-	// Process the task thread model statistics
-	thread_model_metric := &Metric{
-		Name:      "taskmgr.thread-model",
-		Value:     int64(xmlStats.Taskmgr.ThreadModel.DefaultQuantum),
-		Timestamp: xmlStats.Server.CurrentTime,
-		Tags:      []*MetricTag{},
-	}
-	thread_model_metric.Tags = append(thread_model_metric.Tags, &MetricTag{"type", xmlStats.Taskmgr.ThreadModel.Type})
-	returnMetrics = append(returnMetrics, thread_model_metric)
 
 	// Process the traffic statistics
 	trafficMetrics := make([]*Metric, 0, 10)
@@ -392,45 +387,50 @@ func ReadXmlStats(statsData []byte) error {
 	for _, view := range xmlStats.Views.View {
 		// Zones
 		view_tag := &MetricTag{"view", view.Name}
-		cache_tag := &MetricTag{"cache", view.Cache.Name}
+		cache_tag := &MetricTag{"type", "cache"}
 		for _, cache_counter := range view.Cache.Rrset {
 			cache_metric := &Metric{
 				Name:      cache_counter.Name,
 				Value:     int64(cache_counter.Counter),
 				Timestamp: xmlStats.Server.CurrentTime,
-				Tags:      []*MetricTag{},
+				Tags:      []*MetricTag{view_tag, cache_tag},
 			}
-			cache_metric.Tags = append(cache_metric.Tags, view_tag, cache_tag)
-			viewMetrics = append(viewMetrics, cache_metric)
+			if cache_metric.Value != 0 {
+				viewMetrics = append(viewMetrics, cache_metric)
+			}
 		}
 
 		for _, view_counter := range view.Counters {
 			view_counters := view_counter.toMetrics(xmlStats.Server.CurrentTime)
 			for _, metric := range view_counters {
-				view_counter_metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
-				view_counter_metric_tags = append(view_counter_metric_tags, view_tag)
-				view_counter_metric_tags = append(view_counter_metric_tags, metric.Tags...)
-				metric.Tags = view_counter_metric_tags
+				if metric.Value != 0 {
+					view_counter_metric_tags := make([]*MetricTag, 0, len(metric.Tags)+1)
+					view_counter_metric_tags = append(view_counter_metric_tags, view_tag)
+					view_counter_metric_tags = append(view_counter_metric_tags, metric.Tags...)
+					metric.Tags = view_counter_metric_tags
+					viewMetrics = append(viewMetrics, metric)
+				}
 			}
-			viewMetrics = append(viewMetrics, view_counters...)
 		}
 
 		for _, zone := range view.Zones.Zone {
 			zone_tags := make([]*MetricTag, 0, 10)
 			zone_tags = append(zone_tags, view_tag)
-			zone_tags = append(zone_tags, cache_tag)
-			zone_tags = append(zone_tags, &MetricTag{"name", strings.Replace(zone.Name, ".", "_", -1)})
-			zone_tags = append(zone_tags, &MetricTag{"rdataclass", zone.Rdataclass})
+			// zone_tags = append(zone_tags, cache_tag)
+			zone_tags = append(zone_tags, &MetricTag{"zone", strings.Replace(zone.Name, ".", "_", -1)})
+			zone_tags = append(zone_tags, &MetricTag{"class", zone.Rdataclass})
 			zone_tags = append(zone_tags, &MetricTag{"type", zone.Type})
 			for _, zone_counter := range zone.Counters {
 				zone_counters := zone_counter.toMetrics(xmlStats.Server.CurrentTime)
 				for _, metric := range zone_counters {
-					zone_counter_metric_tags := make([]*MetricTag, 0, len(metric.Tags)+4)
-					zone_counter_metric_tags = append(zone_counter_metric_tags, zone_tags...)
-					zone_counter_metric_tags = append(zone_counter_metric_tags, metric.Tags...)
-					metric.Tags = zone_counter_metric_tags
+					if metric.Value != 0 {
+						zone_counter_metric_tags := make([]*MetricTag, 0, len(metric.Tags)+4)
+						zone_counter_metric_tags = append(zone_counter_metric_tags, zone_tags...)
+						zone_counter_metric_tags = append(zone_counter_metric_tags, metric.Tags...)
+						metric.Tags = zone_counter_metric_tags
+						viewMetrics = append(viewMetrics, metric)
+					}
 				}
-				viewMetrics = append(viewMetrics, zone_counters...)
 			}
 		}
 	}

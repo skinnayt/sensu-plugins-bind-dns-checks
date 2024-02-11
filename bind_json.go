@@ -1145,7 +1145,7 @@ func (t *Traffic) toMetrics(metric_time time.Time) []*Metric {
 		type_tag := &MetricTag{"type", traffic_type.Type}
 		ipver_tag := &MetricTag{"ipver", traffic_type.IPVer}
 		metrics = append(metrics, &Metric{
-			Name:      "range" + traffic_type.Name,
+			Name:      traffic_type.Name,
 			Value:     traffic_type.Value,
 			Timestamp: metric_time,
 			Tags:      []*MetricTag{ipver_tag, protocol_tag, type_tag},

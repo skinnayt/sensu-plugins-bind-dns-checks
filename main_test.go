@@ -155,8 +155,10 @@ func TestExecuteCheck(t *testing.T) {
 	}{
 		{"xml", "", namedXmlStats},
 		{"xml", "graphite", namedXmlStats},
+		{"xml", "prometheus", namedXmlStats},
 		{"json", "", namedJsonStats},
 		{"json", "graphite", namedJsonStats},
+		{"json", "prometheus", namedJsonStats},
 	}
 
 	for _, tc := range tt {

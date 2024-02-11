@@ -1264,8 +1264,8 @@ type SocketMgrSocket struct {
 	Name         string   `json:"name"`
 	References   int      `json:"references"`
 	Type         string   `json:"type"`
-	PeerAddress  string   `json:"peer_address,omitempty"`
-	LocalAddress string   `json:"local_address,omitempty"`
+	PeerAddress  string   `json:"peer-address,omitempty"`
+	LocalAddress string   `json:"local-address,omitempty"`
 	States       []string `json:"states"`
 }
 
@@ -1277,10 +1277,22 @@ func (s *SocketMgrSocket) toMetric(metric_time time.Time) *Metric {
 		Tags:      []*MetricTag{},
 	}
 	if s.LocalAddress != "" {
-		socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"local-address", s.LocalAddress})
+		socket_metric.Tags = append(
+			socket_metric.Tags,
+			&MetricTag{
+				"local-address",
+				strings.Replace(s.LocalAddress, ".", "_", -1),
+			},
+		)
 	}
 	if s.PeerAddress != "" {
-		socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"peer-address", s.PeerAddress})
+		socket_metric.Tags = append(
+			socket_metric.Tags,
+			&MetricTag{
+				"peer-address",
+				strings.Replace(s.PeerAddress, ".", "_", -1),
+			},
+		)
 	}
 	socket_metric.Tags = append(socket_metric.Tags, &MetricTag{"type", s.Type})
 	return socket_metric
@@ -1297,10 +1309,13 @@ type TaskMgrTask struct {
 
 func (t *TaskMgrTask) toMetric(metric_time time.Time) *Metric {
 	task_metric := &Metric{
-		Name:      t.Name,
+		Name:      t.Id,
 		Value:     int64(t.Events),
 		Timestamp: metric_time,
 		Tags:      []*MetricTag{},
+	}
+	if t.Name != "" {
+		task_metric.Tags = append(task_metric.Tags, &MetricTag{"name", t.Name})
 	}
 	return task_metric
 }
@@ -1322,67 +1337,68 @@ type Context struct {
 
 func (c *Context) toMetric(metric_time time.Time) []*Metric {
 	context_name_tag := &MetricTag{"context", c.Name}
+	context_id_tag := &MetricTag{"context-id", c.Id}
 
 	context_metrics := make([]*Metric, 0)
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "References",
 		Value:     int64(c.References),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Total",
 		Value:     int64(c.Total),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Inuse",
 		Value:     int64(c.Inuse),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Maxinuse",
 		Value:     int64(c.Maxinuse),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Malloced",
 		Value:     int64(c.Malloced),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Maxmalloced",
 		Value:     int64(c.Maxmalloced),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Blocksize",
 		Value:     int64(c.Blocksize),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Pools",
 		Value:     int64(c.Pools),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Hiwater",
 		Value:     int64(c.Hiwater),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 	context_metrics = append(context_metrics, &Metric{
 		Name:      "Lowater",
 		Value:     int64(c.Lowater),
 		Timestamp: metric_time,
-		Tags:      []*MetricTag{context_name_tag},
+		Tags:      []*MetricTag{context_name_tag, context_id_tag},
 	})
 
 	return context_metrics
@@ -1869,9 +1885,14 @@ func ReadJsonStats(statsData []byte) error {
 	})
 
 	socket_mgr_metrics := make([]*Metric, 0)
+	socket_mgr_tag := &MetricTag{"server", "socketmgr"}
 	for _, socket := range jsonStats.SocketMgr.Sockets {
 		socket_metric := socket.toMetric(jsonStats.CurrentTime)
 		if socket_metric.Name != "" {
+			socket_tags := make([]*MetricTag, 0, len(socket_metric.Tags)+1)
+			socket_tags = append(socket_tags, socket_mgr_tag)
+			socket_tags = append(socket_tags, socket_metric.Tags...)
+			socket_metric.Tags = socket_tags
 			socket_mgr_metrics = append(socket_mgr_metrics, socket_metric)
 		}
 	}

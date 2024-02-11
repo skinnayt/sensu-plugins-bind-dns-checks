@@ -57,13 +57,19 @@ func TestCheckArgs(t *testing.T) {
 	assert.Error(err)
 
 	// Make sure we get an error when file is not readable
-	os.Chmod("tests/unreadable.stats", 0100)
+	err = os.Chmod("tests/unreadable.stats", 0100)
+	if err != nil {
+		assert.FailNow("Unable to change file permissions")
+	}
 	plugin.StatisticsFormat = "file"
 	plugin.StatisticsFilePath = "tests/unreadable.stats"
 	ok, err = checkArgs(nil)
 	assert.Equal(ok, 3)
 	assert.Error(err)
-	os.Chmod("tests/unreadable.stats", 0644)
+	err = os.Chmod("tests/unreadable.stats", 0644)
+	if err != nil {
+		assert.FailNow("Unable to change file permissions")
+	}
 
 	// For both XML and JSON, we don't need to specify a file path
 	// But we need to specify the ip address and port
@@ -122,13 +128,19 @@ func TestExecuteCheck(t *testing.T) {
 	assert.NoError(err)
 
 	// Test not able to read file
-	os.Chmod("tests/unreadable.stats", 0100)
+	err = os.Chmod("tests/unreadable.stats", 0100)
+	if err != nil {
+		assert.FailNow("Unable to change file permissions")
+	}
 	plugin.StatisticsFormat = "file"
 	plugin.StatisticsFilePath = "tests/unreadable.stats"
 	ok, err = executeCheck(nil)
 	assert.Equal(ok, 2)
 	assert.Error(err)
-	os.Chmod("tests/unreadable.stats", 0644)
+	err = os.Chmod("tests/unreadable.stats", 0644)
+	if err != nil {
+		assert.FailNow("Unable to change file permissions")
+	}
 
 	var namedXmlStats []byte
 	var namedJsonStats []byte
@@ -215,7 +227,11 @@ func startTestServer(runningServer *testServer) *httptest.Server {
 				// Return the xml
 				w.Header().Set("Content-Type", "application/xml")
 				w.WriteHeader(http.StatusOK)
-				w.Write(runningServer.Content)
+				_, err := w.Write(runningServer.Content)
+				if err != nil {
+					http.Error(w, "Error writing to response", http.StatusInternalServerError)
+					return
+				}
 
 				w.(http.Flusher).Flush()
 				r.Context().Done()
@@ -227,7 +243,11 @@ func startTestServer(runningServer *testServer) *httptest.Server {
 				// Return the json
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				w.Write(runningServer.Content)
+				_, err := w.Write(runningServer.Content)
+				if err != nil {
+					http.Error(w, "Error writing to response", http.StatusInternalServerError)
+					return
+				}
 
 				w.(http.Flusher).Flush()
 				r.Context().Done()

@@ -34,17 +34,11 @@ type bindXmlStats struct {
 		} `xml:"summary"`
 	} `xml:"memory"`
 	Server struct {
-		BootTime   time.Time `xml:"boot-time"`
-		ConfigTime time.Time `xml:"config-time"`
-		Counters   []struct {
-			Type    string `xml:"type,attr"`
-			Counter []struct {
-				Name     string `xml:"name,attr"`
-				CharData string `xml:",chardata"`
-			} `xml:"counter"`
-		} `xml:"counters"`
-		CurrentTime time.Time `xml:"current-time"`
-		Version     string    `xml:"version"`
+		BootTime    time.Time      `xml:"boot-time"`
+		ConfigTime  time.Time      `xml:"config-time"`
+		Counters    []*XmlCounters `xml:"counters"`
+		CurrentTime time.Time      `xml:"current-time"`
+		Version     string         `xml:"version"`
 	} `xml:"server"`
 	Socketmgr struct {
 		Sockets struct {
@@ -80,42 +74,18 @@ type bindXmlStats struct {
 	Traffic struct {
 		Ipv4 struct {
 			Tcp struct {
-				Counters []struct {
-					Type    string `xml:"type,attr"`
-					Counter []struct {
-						Name     string `xml:"name,attr"`
-						CharData string `xml:",chardata"`
-					} `xml:"counter"`
-				} `xml:"counters"`
+				Counters []*XmlCounters `xml:"counters"`
 			} `xml:"tcp"`
 			Udp struct {
-				Counters []struct {
-					Type    string `xml:"type,attr"`
-					Counter []struct {
-						Name     string `xml:"name,attr"`
-						CharData string `xml:",chardata"`
-					} `xml:"counter"`
-				} `xml:"counters"`
+				Counters []*XmlCounters `xml:"counters"`
 			} `xml:"udp"`
 		} `xml:"ipv4"`
 		Ipv6 struct {
 			Tcp struct {
-				Counters []struct {
-					Type    string `xml:"type,attr"`
-					Counter []struct {
-						Name     string `xml:"name,attr"`
-						CharData string `xml:",chardata"`
-					} `xml:"counter"`
-				} `xml:"counters"`
+				Counters []*XmlCounters `xml:"counters"`
 			} `xml:"tcp"`
 			Udp struct {
-				Counters []struct {
-					Type    string `xml:"type,attr"`
-					Counter []struct {
-						Name     string `xml:"name,attr"`
-						CharData string `xml:",chardata"`
-					} `xml:"counter"`
-				} `xml:"counters"`
+				Counters []*XmlCounters `xml:"counters"`
 			} `xml:"udp"`
 		} `xml:"ipv6"`
 	} `xml:"traffic"`
@@ -129,33 +99,31 @@ type bindXmlStats struct {
 					Name    string `xml:"name"`
 				} `xml:"rrset"`
 			} `xml:"cache"`
-			Counters []struct {
-				Type    string `xml:"type,attr"`
-				Counter []struct {
-					Name     string `xml:"name,attr"`
-					CharData string `xml:",chardata"`
-				} `xml:"counter"`
-			} `xml:"counters"`
-			Zones struct {
+			Counters []*XmlCounters `xml:"counters"`
+			Zones    struct {
 				Zone []struct {
-					Name       string `xml:"name,attr"`
-					Rdataclass string `xml:"rdataclass,attr"`
-					Counters   []struct {
-						Type    string `xml:"type,attr"`
-						Counter []struct {
-							Name     string `xml:"name,attr"`
-							CharData string `xml:",chardata"`
-						} `xml:"counter"`
-					} `xml:"counters"`
-					Expires *time.Time `xml:"expires"`
-					Loaded  time.Time  `xml:"loaded"`
-					Refresh *time.Time `xml:"refresh"`
-					Serial  int        `xml:"serial"`
-					Type    string     `xml:"type"`
+					Name       string         `xml:"name,attr"`
+					Rdataclass string         `xml:"rdataclass,attr"`
+					Counters   []*XmlCounters `xml:"counters"`
+					Expires    *time.Time     `xml:"expires"`
+					Loaded     time.Time      `xml:"loaded"`
+					Refresh    *time.Time     `xml:"refresh"`
+					Serial     int            `xml:"serial"`
+					Type       string         `xml:"type"`
 				} `xml:"zone"`
 			} `xml:"zones"`
 		} `xml:"view"`
 	} `xml:"views"`
+}
+
+type XmlCounter struct {
+	Name     string `xml:"name,attr"`
+	CharData string `xml:",chardata"`
+}
+
+type XmlCounters struct {
+	Type    string        `xml:"type,attr"`
+	Counter []*XmlCounter `xml:"counter"`
 }
 
 func ReadXmlStats(statsData []byte) error {

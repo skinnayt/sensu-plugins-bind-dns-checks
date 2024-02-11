@@ -128,11 +128,11 @@ func (m *Metric) Prometheus() string {
 	}
 
 	return fmt.Sprintf(
-		"%s {%s} %d %d",
+		"%s{%s} %d %d",
 		strings.Replace(m.Name, " ", "_", -1),
 		strings.Join(tags, ","),
 		m.Value,
-		m.Timestamp.Unix(),
+		m.Timestamp.UnixMilli(),
 	)
 }
 

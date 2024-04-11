@@ -7,6 +7,11 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unrelesaed
 
+## [0.1.2] - 2024-04-11
+- Updated GitHub actions
+
+## Unreleased
+
 ## [0,1.1] - 2024-04-11
 - Updated the Go version and dependencies
 - Updated to newer Sensu SDK

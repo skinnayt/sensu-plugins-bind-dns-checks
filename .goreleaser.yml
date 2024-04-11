@@ -8,7 +8,6 @@ builds:
     # Set the binary output location to bin/ so archive will comply with Sensu Go Asset structure
     binary: bin/{{ .ProjectName }}
     targets:
-      - darwin_arm64
       - linux_amd64
       - linux_arm_7
       - linux_arm64

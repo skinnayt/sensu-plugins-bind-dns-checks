@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	corev2 "github.com/sensu/sensu-go/api/core/v2"
+	v2 "github.com/sensu/core/v2"
 	"github.com/sensu/sensu-plugin-sdk/sensu"
 )
 
@@ -126,7 +126,7 @@ func main() {
 	check.Execute()
 }
 
-func checkArgs(event *corev2.Event) (int, error) {
+func checkArgs(event *v2.Event) (int, error) {
 	// Check that we got an appropriate statistics format
 	if plugin.StatisticsFormat == "file" {
 		if plugin.StatisticsFilePath == "" {
@@ -161,7 +161,7 @@ func checkArgs(event *corev2.Event) (int, error) {
 	return sensu.CheckStateOK, nil
 }
 
-func executeCheck(event *corev2.Event) (int, error) {
+func executeCheck(event *v2.Event) (int, error) {
 	if plugin.StatisticsFormat == "file" {
 		if err := readStatisticsFile(); err != nil {
 			return sensu.CheckStateCritical, fmt.Errorf("error reading statistics file: %s", err)

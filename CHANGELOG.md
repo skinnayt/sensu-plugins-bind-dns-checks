@@ -7,6 +7,11 @@ Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+## [0.1.5] - 2024-04-11
+- Never ending story of GitHub action updates
+
+## Unreleased
+
 ## [0.1.4] - 2024-04-11
 - Added GitHub token secret and updated GoReleaser Action
 

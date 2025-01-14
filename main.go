@@ -203,7 +203,7 @@ func readStatisticsFile() error {
 	statsFile["view"], _ = regexp.Compile(`^\[View: (?P<view>[a-zA-Z0-9_/ ]+)\]$`)
 	statsFile["view_cache"], _ = regexp.Compile(`^\[View: (?P<view>[a-zA-Z0-9_/ ]+) \(Cache: (?P<cache>[a-zA-Z0-9_/ ]+)\)\]$`)
 	statsFile["subsection"], _ = regexp.Compile(`^\[(?P<subsection>[-a-zA-Z0-9_/!#()<>]+)\]$`)
-	statsFile["zone"], _ = regexp.Compile(`^\[(?P<zone>\.|(?:[a-z]+)(?:\.[a-z]+){1,}|(?:[0-9A-F]+\.)*(?:IN-ADDR|IP6|HOME|EMPTY\.AS112)\.ARPA)\]$`)
+	statsFile["zone"], _ = regexp.Compile(`^\[(?P<zone>\.|(?:[-0-9a-zA-Z]+\.)(?:[-0-9a-zA-Z]+){1,}|(?:[0-9A-F]+\.)*(?:IN-ADDR|IP6|HOME|EMPTY\.AS112)\.ARPA)\]$`)
 	statsFile["bind_var"], _ = regexp.Compile(`^\[(?P<bind_var>[a-z.]+) \(view: _bind\)\]$`)
 
 	for _, line := range strings.Split(string(dnsStats), "\n") {

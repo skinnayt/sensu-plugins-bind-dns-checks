@@ -2,13 +2,11 @@
 ![Go Test](https://github.com/skinnayt/sensu-plugins-bind-dns-checks/workflows/Go%20Test/badge.svg)
 ![goreleaser](https://github.com/skinnayt/sensu-plugins-bind-dns-checks/workflows/goreleaser/badge.svg)
 
-# Check Plugin Template
+# Sensu Bind DNS Metrics Check
 
 ## Overview
-check-plugin-template is a template repository which wraps the [Sensu Plugin SDK][2].
-To use this project as a template, click the "Use this template" button from the main project page.
-Once the repository is created from this template, you can use the [Sensu Plugin Tool][9] to
-populate the templated fields with the proper values.
+
+The Sensu Bind DNS metrics check is a metrics handler that pulls metrics from bind DNS name servers. It can read the metrics from the statistics file, HTTP XML port or HTTP JSON port.
 
 ## Functionality
 
@@ -71,14 +69,17 @@ If you're using an earlier version of sensuctl, you can find the asset on the [B
 type: CheckConfig
 api_version: core/v2
 metadata:
-  name: sensu-plugins-bind-dns-checks
+  name: check-bind-dns
   namespace: default
 spec:
-  command: sensu-plugins-bind-dns-checks --example example_arg
+  command: sensu-plugins-bind-dns-checks --statistics-format [file|xml|json] --statistics-ip 192.168.1.1 statistics-port 8053 --output-format [graphite|prometheus]
+  output_metric_format: prometheus
+  output_metrics_handler:
+    - influxdb
   subscriptions:
-  - system
+    - system
   runtime_assets:
-  - skinnayt/sensu-plugins-bind-dns-checks
+    - skinnayt/sensu-plugins-bind-dns-checks
 ```
 
 ## Installation from source

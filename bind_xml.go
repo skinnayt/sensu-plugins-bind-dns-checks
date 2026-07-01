@@ -327,7 +327,7 @@ func ReadXmlStats(statsData []byte) error {
 					socket_metric.Tags,
 					&MetricTag{
 						"local-address",
-						strings.Replace(*socket.LocalAddress, ".", "_", -1),
+						strings.ReplaceAll(*socket.LocalAddress, ".", "_"),
 					},
 				)
 			}
@@ -336,7 +336,7 @@ func ReadXmlStats(statsData []byte) error {
 					socket_metric.Tags,
 					&MetricTag{
 						"peer-address",
-						strings.Replace(socket.PeerAddress, ".", "_", -1),
+						strings.ReplaceAll(socket.PeerAddress, ".", "_"),
 					},
 				)
 			}
@@ -435,7 +435,7 @@ func ReadXmlStats(statsData []byte) error {
 					zone_name = strings.Replace(zone_name, "ip6.arpa", "", 1)
 				}
 				zone_name = strings.Trim(zone_name, ".")
-				zone_name = strings.Replace(zone_name, ".", "", -1)
+				zone_name = strings.ReplaceAll(zone_name, ".", "")
 				for {
 					if len(zone_name) < 4 {
 						if len(zone_name) > 0 {
@@ -454,7 +454,7 @@ func ReadXmlStats(statsData []byte) error {
 			} else {
 				zonename = zone.Name
 			}
-			zone_tags = append(zone_tags, &MetricTag{"zone", strings.Replace(zonename, ".", "_", -1)})
+			zone_tags = append(zone_tags, &MetricTag{"zone", strings.ReplaceAll(zonename, ".", "_")})
 			zone_tags = append(zone_tags, &MetricTag{"class", zone.Rdataclass})
 			zone_tags = append(zone_tags, &MetricTag{"type", zone.Type})
 			for _, zone_counter := range zone.Counters {

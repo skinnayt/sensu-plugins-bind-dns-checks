@@ -115,7 +115,7 @@ func (m *Metric) Graphite(tag_prefix string) string {
 	return fmt.Sprintf(
 		"%s.%s %d %d",
 		strings.Join(tags, "."),
-		strings.Replace(m.Name, " ", "_", -1),
+		strings.ReplaceAll(m.Name, " ", "_"),
 		m.Value,
 		m.Timestamp.Unix(),
 	)
@@ -128,7 +128,8 @@ func main() {
 
 func checkArgs(event *v2.Event) (int, error) {
 	// Check that we got an appropriate statistics format
-	if plugin.StatisticsFormat == "file" {
+	switch plugin.StatisticsFormat {
+	case "file":
 		if plugin.StatisticsFilePath == "" {
 			return sensu.CheckStateUnknown, fmt.Errorf("no statistics file path specified when using file format")
 		}
@@ -140,7 +141,7 @@ func checkArgs(event *v2.Event) (int, error) {
 		if _, err := os.Open(plugin.StatisticsFilePath); err != nil {
 			return sensu.CheckStateUnknown, fmt.Errorf("unable to read statistics file: %s", err)
 		}
-	} else if (plugin.StatisticsFormat == "xml") || (plugin.StatisticsFormat == "json") {
+	case "xml", "json":
 		if plugin.StatisticsIP == "" {
 			return sensu.CheckStateUnknown, fmt.Errorf("no statistics IP specified when using %s format", plugin.StatisticsFormat)
 		}
@@ -154,7 +155,7 @@ func checkArgs(event *v2.Event) (int, error) {
 		if plugin.StatisticsPort < 1 || plugin.StatisticsPort > 65535 {
 			return sensu.CheckStateUnknown, fmt.Errorf("invalid statistics port specified: %d", plugin.StatisticsPort)
 		}
-	} else {
+	default:
 		return sensu.CheckStateUnknown, fmt.Errorf("invalid statistics format: %s", plugin.StatisticsFormat)
 	}
 
@@ -162,20 +163,22 @@ func checkArgs(event *v2.Event) (int, error) {
 }
 
 func executeCheck(event *v2.Event) (int, error) {
-	if plugin.StatisticsFormat == "file" {
+	switch plugin.StatisticsFormat {
+	case "file":
 		if err := readStatisticsFile(); err != nil {
 			return sensu.CheckStateCritical, fmt.Errorf("error reading statistics file: %s", err)
 		}
-	} else if plugin.StatisticsFormat == "xml" || plugin.StatisticsFormat == "json" {
+	case "xml", "json":
 		if err := readStatisticsChannel(); err != nil {
 			return sensu.CheckStateCritical, fmt.Errorf("error reading statistics channel: %s", err)
 		}
 	}
 
 	// Dump out the metrics loaded from the statistics file or channel
-	if plugin.OutputFormat == "graphite" {
+	switch plugin.OutputFormat {
+	case "graphite":
 		OutputMetricsGraphite()
-	} else if plugin.OutputFormat == "prometheus" {
+	case "prometheus":
 		OutputMetricsPrometheus()
 	}
 
@@ -282,7 +285,7 @@ func readStatisticsChannel() error {
 		return err
 	}
 
-	defer statsResp.Body.Close()
+	defer func() { _ = statsResp.Body.Close() }()
 
 	if statsResp.StatusCode != 200 {
 		return fmt.Errorf("error reading statistics channel: %s", statsResp.Status)
@@ -312,15 +315,16 @@ func readStatisticsChannel() error {
 
 	statsClient.CloseIdleConnections()
 
-	statsResp.Body.Close()
+	_ = statsResp.Body.Close()
 
 	// Read the statistics from the channel
-	if plugin.StatisticsFormat == "xml" {
+	switch plugin.StatisticsFormat {
+	case "xml":
 		// Read the XML statistics
 		if err := ReadXmlStats(statsData); err != nil {
 			return err
 		}
-	} else if plugin.StatisticsFormat == "json" {
+	case "json":
 		// Read the JSON statistics
 		if err := ReadJsonStats(statsData); err != nil {
 			return err
@@ -359,7 +363,7 @@ type PrometheusMetricGroups struct {
 }
 
 func (pmg *PrometheusMetricGroups) findOrAdd(pm *PrometheusMetric) int {
-	var idx int = -1
+	idx := -1
 	for i, group := range pmg.Groups {
 		if group.Name == pm.Name {
 			idx = i
@@ -387,7 +391,7 @@ func OutputMetricsPrometheus() {
 	prom_metric_groups := &PrometheusMetricGroups{Groups: make([]*PrometheusMetricGroup, 0)}
 
 	for _, metric := range plugin.returnMetrics {
-		var parsed_metrics int = 0
+		parsed_metrics := 0
 		prom_metrics := make([]*MetricTag, 0)
 		prom_metrics = append(prom_metrics, &MetricTag{"type", "qtype"})
 		prom_metrics = append(prom_metrics, &MetricTag{"type", "rcode"})
@@ -412,7 +416,7 @@ func OutputMetricsPrometheus() {
 			prom_labels = append(prom_labels, &PromLabel{Name: "packet_size", Value: metric.Name})
 			prom_name := make([]string, 0)
 			for _, tag := range metric.Tags {
-				tag_value := strings.Replace(tag[1], "-", "_", -1)
+				tag_value := strings.ReplaceAll(tag[1], "-", "_")
 				prom_name = append(prom_name, tag_value)
 			}
 			prom_metric := &PrometheusMetric{
@@ -445,7 +449,7 @@ func (pmg *PrometheusMetricGroups) makePromMetric(metric *Metric, metric_tag *Me
 	prom_labels = append(prom_labels, &PromLabel{Name: metric_tag[0], Value: metric.Name})
 	prom_name := make([]string, 0)
 	for _, tag := range metric.Tags {
-		tag_value := strings.Replace(tag[1], "-", "_", -1)
+		tag_value := strings.ReplaceAll(tag[1], "-", "_")
 		if tag[0] == "view" {
 			if tag_value[0:1] == "_" {
 				tag_value = tag_value[1:]

@@ -865,7 +865,7 @@ func (s *SocketMgrSocket) toMetric(metric_time time.Time) *Metric {
 			socket_metric.Tags,
 			&MetricTag{
 				"local-address",
-				strings.Replace(s.LocalAddress, ".", "_", -1),
+				strings.ReplaceAll(s.LocalAddress, ".", "_"),
 			},
 		)
 	}
@@ -874,7 +874,7 @@ func (s *SocketMgrSocket) toMetric(metric_time time.Time) *Metric {
 			socket_metric.Tags,
 			&MetricTag{
 				"peer-address",
-				strings.Replace(s.PeerAddress, ".", "_", -1),
+				strings.ReplaceAll(s.PeerAddress, ".", "_"),
 			},
 		)
 	}
@@ -1014,7 +1014,7 @@ func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
 			zone_grps = append(zone_grps, "ip6.arpa")
 		}
 		zone_name = strings.Trim(zone_name, ".")
-		zone_name = strings.Replace(zone_name, ".", "", -1)
+		zone_name = strings.ReplaceAll(zone_name, ".", "")
 		for {
 			if len(zone_name) < 4 {
 				if len(zone_name) > 0 {
@@ -1033,7 +1033,7 @@ func (z *ZoneView) toMetrics(metric_time time.Time) []*Metric {
 	} else {
 		zonename = z.Name
 	}
-	zone_name_tag := &MetricTag{"zone", strings.Replace(zonename, ".", "_", -1)}
+	zone_name_tag := &MetricTag{"zone", strings.ReplaceAll(zonename, ".", "_")}
 	zone_class_tag := &MetricTag{"class", z.Class}
 	zone_type_tag := &MetricTag{"type", z.Type}
 
@@ -1144,7 +1144,7 @@ func (d *DnsSec) UnmarshalJSON(data []byte) error {
 		if len(kv) != 2 {
 			continue
 		}
-		k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
+		k := strings.ReplaceAll(strings.TrimSpace(kv[0]), `"`, "")
 		v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
 
 		d.DnsSecTypes = append(d.DnsSecTypes, struct {
@@ -1199,22 +1199,18 @@ func (t *Traffic) UnmarshalJSON(data []byte) error {
 	traffic = strings.TrimSpace(traffic)
 
 	traffic_attribute, _ := regexp.Compile("dns-(?P<protocol>udp|tcp|tcp6|udp6)-(?P<type>(?:requests|responses)-sizes)-(?:received|sent)-(?P<ipver>ipv4|ipv6)")
-	for {
-		if len(traffic) == 0 {
-			break
-		}
-
+	for len(traffic) > 0 {
 		// Parse the attribute name from the string
 		attribute_name := traffic[:strings.Index(traffic, ":")+1]
 		traffic = strings.Replace(traffic, attribute_name, "", 1)
 
 		// Parse the attribute name into pieces
-		attribute_name = strings.Replace(attribute_name, `"`, "", -1)
-		attribute_name = strings.Replace(attribute_name, ":", "", -1)
+		attribute_name = strings.ReplaceAll(attribute_name, `"`, "")
+		attribute_name = strings.ReplaceAll(attribute_name, ":", "")
 		attribute_pieces := traffic_attribute.FindStringSubmatch(attribute_name)
 		protocol := attribute_pieces[1]
 		traffic_type := attribute_pieces[2]
-		traffic_type = strings.Replace(traffic_type, "s-sizes", "-size", -1)
+		traffic_type = strings.ReplaceAll(traffic_type, "s-sizes", "-size")
 		ipver := attribute_pieces[3]
 
 		// Parse the attribute value from the string
@@ -1237,7 +1233,7 @@ func (t *Traffic) UnmarshalJSON(data []byte) error {
 				// Split the key value pair
 				kv := strings.Split(piece, ":")
 				if len(kv) == 2 {
-					k := strings.Replace(strings.TrimSpace(kv[0]), `"`, "", -1)
+					k := strings.ReplaceAll(strings.TrimSpace(kv[0]), `"`, "")
 					v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
 
 					traffic_type := struct {
